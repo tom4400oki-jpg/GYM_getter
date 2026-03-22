@@ -1,16 +1,16 @@
 """
 定期スクレイプスケジューラー
-APScheduler を使って一定間隔で空き確認を実行する
+APScheduler BackgroundScheduler を使って一定間隔で空き確認を実行する
 """
 import os
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime
 
-scheduler = AsyncIOScheduler(timezone="Asia/Tokyo")
+scheduler = BackgroundScheduler(timezone="Asia/Tokyo")
 
 
-def start_scheduler() -> AsyncIOScheduler:
+def start_scheduler() -> BackgroundScheduler:
     interval_min = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "30"))
 
     scheduler.add_job(
@@ -25,8 +25,8 @@ def start_scheduler() -> AsyncIOScheduler:
     return scheduler
 
 
-async def scheduled_availability_check():
+def scheduled_availability_check():
     """定期実行される空き確認タスク"""
     from backend.tasks import run_availability_check_all
     print(f"[Scheduler] 定期チェック開始 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    await run_availability_check_all()
+    run_availability_check_all()

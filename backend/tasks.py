@@ -1,14 +1,33 @@
 """
 スクレイプタスク（API エンドポイントとスケジューラーから呼ばれる）
+
+Note: Playwright は Python 3.13 + Windows + uvicorn の event loop 内で
+      subprocess を起動できないため、各タスクは独立した event loop で実行する。
+      FastAPI の BackgroundTasks に同期関数を渡すとスレッドプールで実行されるため、
+      内部で asyncio.run() を使っても問題ない。
 """
 import os
-import json
-from datetime import datetime
-from pathlib import Path
+import sys
+import asyncio
+import traceback
+from datetime import datetime, timezone
 
 from backend.database import SessionLocal
 from backend.models import BookingFlowStep, AvailabilitySlot, ScrapeLog, Facility
 from backend.scrapers.fureai_net import FureaiNetScraper, get_target_dates
+
+
+def _run_async(coro):
+    """Windows の SelectorEventLoop では subprocess が動かないため ProactorEventLoop を明示指定"""
+    if sys.platform == "win32":
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+    else:
+        return asyncio.run(coro)
 
 
 def _get_scraper_kwargs() -> dict:
@@ -20,7 +39,25 @@ def _get_scraper_kwargs() -> dict:
     }
 
 
-async def run_detect_flow(facility_id: str) -> dict:
+# ──────────────────────────────────────────
+# 非同期スクレイピング処理（独立 event loop で実行）
+# ──────────────────────────────────────────
+
+async def _async_detect_flow(facility_dict: dict) -> list[dict]:
+    async with FureaiNetScraper(**_get_scraper_kwargs()) as scraper:
+        return await scraper.detect_booking_flow(facility_dict)
+
+
+async def _async_check_availability(facility_dict: dict, target_dates: list[str]) -> list[dict]:
+    async with FureaiNetScraper(**_get_scraper_kwargs()) as scraper:
+        return await scraper.check_availability(facility_dict, target_dates)
+
+
+# ──────────────────────────────────────────
+# 同期タスク（FastAPI BackgroundTasks / APScheduler から呼ぶ）
+# ──────────────────────────────────────────
+
+def run_detect_flow(facility_id: str) -> dict:
     """指定施設の予約フローを検出してDBに保存"""
     db = SessionLocal()
     log = ScrapeLog(facility_id=facility_id, task_type="detect_flow", status="running")
@@ -38,12 +75,10 @@ async def run_detect_flow(facility_id: str) -> dict:
             "type": facility.facility_type,
         }
 
-        async with FureaiNetScraper(**_get_scraper_kwargs()) as scraper:
-            steps = await scraper.detect_booking_flow(facility_dict)
+        # 独立した event loop で Playwright を実行
+        steps = _run_async(_async_detect_flow(facility_dict))
 
-        # 既存のフローステップを削除して再保存
         db.query(BookingFlowStep).filter(BookingFlowStep.facility_id == facility_id).delete()
-
         for step_data in steps:
             step = BookingFlowStep(
                 facility_id=facility_id,
@@ -61,23 +96,22 @@ async def run_detect_flow(facility_id: str) -> dict:
 
         log.status = "success"
         log.result_count = len(steps)
-        log.completed_at = datetime.utcnow()
+        log.completed_at = datetime.now(timezone.utc)
         db.commit()
-
-        await _notify(f"[フロー検出完了] {facility.name}: {len(steps)}ステップ検出")
+        print(f"[通知] [フロー検出完了] {facility.name}: {len(steps)}ステップ検出")
         return {"status": "success", "steps": len(steps)}
 
     except Exception as e:
         log.status = "error"
-        log.error_message = str(e)
-        log.completed_at = datetime.utcnow()
+        log.error_message = f"{type(e).__name__}: {e}" if str(e) else traceback.format_exc()[-300:]
+        log.completed_at = datetime.now(timezone.utc)
         db.commit()
-        raise
+        print(f"[Tasks] run_detect_flow エラー ({facility_id}): {traceback.format_exc()}")
     finally:
         db.close()
 
 
-async def run_availability_check(facility_id: str, days_ahead: int = 14) -> dict:
+def run_availability_check(facility_id: str, days_ahead: int = 14) -> dict:
     """指定施設の空き状況をチェックしてDBに保存"""
     db = SessionLocal()
     log = ScrapeLog(facility_id=facility_id, task_type="check_availability", status="running")
@@ -92,12 +126,10 @@ async def run_availability_check(facility_id: str, days_ahead: int = 14) -> dict
         facility_dict = {"id": facility.id, "name": facility.name}
         target_dates = get_target_dates(days_ahead)
 
-        async with FureaiNetScraper(**_get_scraper_kwargs()) as scraper:
-            slots = await scraper.check_availability(facility_dict, target_dates)
+        # 独立した event loop で Playwright を実行
+        slots = _run_async(_async_check_availability(facility_dict, target_dates))
 
-        # 古いスロットを削除して再保存
         db.query(AvailabilitySlot).filter(AvailabilitySlot.facility_id == facility_id).delete()
-
         new_available = 0
         for slot_data in slots:
             slot = AvailabilitySlot(**slot_data)
@@ -107,49 +139,32 @@ async def run_availability_check(facility_id: str, days_ahead: int = 14) -> dict
 
         log.status = "success"
         log.result_count = len(slots)
-        log.completed_at = datetime.utcnow()
+        log.completed_at = datetime.now(timezone.utc)
         db.commit()
 
         if new_available > 0:
-            await _notify(f"[空き発見！] {facility.name}: {new_available}枠の空きが見つかりました")
-
+            print(f"[通知] [空き発見！] {facility.name}: {new_available}枠の空きが見つかりました")
         return {"status": "success", "slots": len(slots), "available": new_available}
 
     except Exception as e:
         log.status = "error"
-        log.error_message = str(e)
-        log.completed_at = datetime.utcnow()
+        log.error_message = f"{type(e).__name__}: {e}" if str(e) else traceback.format_exc()[-300:]
+        log.completed_at = datetime.now(timezone.utc)
         db.commit()
-        raise
+        print(f"[Tasks] run_availability_check エラー ({facility_id}): {traceback.format_exc()}")
     finally:
         db.close()
 
 
-async def run_availability_check_all():
+def run_availability_check_all():
     """全アクティブ施設の空き確認"""
     db = SessionLocal()
     try:
         facilities = db.query(Facility).filter(Facility.is_active == True).all()
         for facility in facilities:
             try:
-                await run_availability_check(facility.id)
+                run_availability_check(facility.id)
             except Exception as e:
                 print(f"[Tasks] {facility.name} エラー: {e}")
     finally:
         db.close()
-
-
-async def _notify(message: str):
-    """Discord Webhook で通知を送る（URL 未設定なら標準出力）"""
-    webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "")
-    print(f"[通知] {message}")
-
-    if not webhook_url:
-        return
-
-    try:
-        import httpx
-        async with httpx.AsyncClient() as client:
-            await client.post(webhook_url, json={"content": message}, timeout=10)
-    except Exception as e:
-        print(f"[通知エラー] Discord 送信失敗: {e}")
