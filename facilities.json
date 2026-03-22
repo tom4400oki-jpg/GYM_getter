@@ -1,0 +1,47 @@
+{
+  "target_area": "川崎市高津区",
+  "booking_system": "fureai_net",
+  "booking_system_url": "https://www.fureai-net.city.kawasaki.jp/web/",
+  "facilities": [
+    {
+      "id": "takatsu_sports_center",
+      "name": "高津スポーツセンター",
+      "type": "gym",
+      "address": "川崎市高津区二子3-15-1",
+      "phone": "044-813-6531",
+      "hours": "8:45-21:30",
+      "sports": ["basketball", "volleyball", "badminton", "pickleball"],
+      "areas": [
+        { "name": "大体育室・全面", "capacity_note": "バスケ3面、バレー3面、バドミントン12面" },
+        { "name": "大体育室・半面", "capacity_note": "バスケ1-2面" },
+        { "name": "小体育室", "capacity_note": "バドミントン等" }
+      ],
+      "notes": "ピックルボールは体育室内での個人使用扱い。全面予約は抽選（6ヶ月前）。",
+      "active": true
+    },
+    {
+      "id": "todoroki_tennis",
+      "name": "等々力テニスコート",
+      "type": "tennis_court",
+      "address": "川崎市中原区等々力1-1",
+      "phone": "044-798-5000",
+      "hours": "8:00-21:00",
+      "sports": ["tennis", "pickleball"],
+      "areas": [],
+      "notes": "高津区から最寄りのテニスコート。ピックルボールはコート確認要。",
+      "active": true
+    },
+    {
+      "id": "tama_sports_center",
+      "name": "多摩スポーツセンター",
+      "type": "gym",
+      "address": "川崎市多摩区布田3-1",
+      "phone": "044-935-2300",
+      "hours": "8:45-21:30",
+      "sports": ["basketball", "volleyball", "badminton", "tennis"],
+      "areas": [],
+      "notes": "テニスコートあり。高津区から少し距離あり。",
+      "active": true
+    }
+  ]
+}

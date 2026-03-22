@@ -1,0 +1,18 @@
+# 環境変数（認証情報）
+.env
+
+# データベース
+*.db
+
+# Claude設定
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# スクリーンショット
+screenshots/
