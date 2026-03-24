@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GYM Getter - 川崎市高津区 施設空き確認</title>
+  <title>GYM Getter - 川崎市施設空き確認</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="header-inner">
       <h1>🏀 GYM Getter</h1>
-      <p class="subtitle">川崎市高津区 体育館・テニスコート 空き確認システム</p>
+      <p class="subtitle">川崎市 体育館・テニスコート 空き確認システム</p>
     </div>
     <div class="header-actions">
-      <button id="btn-check-all" class="btn btn-primary">全施設チェック</button>
-      <button id="btn-detect-all" class="btn btn-secondary">フロー検出</button>
       <span id="last-updated" class="last-updated"></span>
     </div>
   </header>
@@ -22,63 +21,83 @@
   <main>
     <!-- タブ -->
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="availability">空き状況</button>
-      <button class="tab-btn" data-tab="flow">予約フロー</button>
+      <button class="tab-btn active" data-tab="centers">体育館・施設</button>
+      <button class="tab-btn" data-tab="availability">空き状況一覧</button>
       <button class="tab-btn" data-tab="logs">実行ログ</button>
     </nav>
 
-    <!-- 空き状況タブ -->
-    <section id="tab-availability" class="tab-content active">
+    <!-- ========== 体育館・施設タブ ========== -->
+    <section id="tab-centers" class="tab-content active">
+
+      <!-- グローバルアクション -->
+      <div class="global-actions">
+        <button id="btn-discover-all" class="btn btn-primary btn-lg">
+          ▶ 全施設リスト化
+        </button>
+        <button id="btn-check-all" class="btn btn-success btn-lg">
+          ✓ 全施設チェック
+        </button>
+        <span id="global-status" class="global-status"></span>
+      </div>
+
+      <!-- 施設カード一覧（JSで生成） -->
+      <div id="centers-list"></div>
+    </section>
+
+    <!-- ========== 空き状況一覧タブ ========== -->
+    <section id="tab-availability" class="tab-content">
       <div class="filter-bar">
         <select id="filter-facility">
           <option value="">全施設</option>
         </select>
+        <select id="filter-area">
+          <option value="">全エリア</option>
+        </select>
+        <select id="filter-booking-type">
+          <option value="">予約・抽選</option>
+          <option value="reservation">予約</option>
+          <option value="lottery">抽選</option>
+        </select>
         <select id="filter-status">
           <option value="">全ステータス</option>
-          <option value="available">空き ○</option>
-          <option value="lottery">抽選 △</option>
-          <option value="occupied">使用中 ×</option>
+          <option value="available">○ 全て空き</option>
+          <option value="partial">△ 一部空き</option>
+          <option value="open">◎ 一般開放</option>
+          <option value="occupied">× 予約あり</option>
           <option value="closed">休館</option>
+          <option value="out_of_period">受付期間外</option>
         </select>
-        <input type="date" id="filter-date-from" placeholder="開始日">
-        <span>〜</span>
-        <input type="date" id="filter-date-to" placeholder="終了日">
+        <input type="date" id="filter-date-from">
+        <span style="color:var(--text-muted)">〜</span>
+        <input type="date" id="filter-date-to">
         <button id="btn-filter" class="btn btn-small">絞り込み</button>
       </div>
-
       <div id="availability-summary" class="summary-bar"></div>
-
       <div id="availability-grid" class="slot-grid">
         <div class="loading">データを読み込み中...</div>
       </div>
     </section>
 
-    <!-- 予約フロータブ -->
-    <section id="tab-flow" class="tab-content">
-      <div class="facility-selector">
-        <label>施設を選択：</label>
-        <div id="facility-buttons" class="btn-group"></div>
-      </div>
-      <div id="flow-steps" class="flow-container">
-        <p class="placeholder">施設を選択するか「フロー検出」を実行してください。</p>
-      </div>
-    </section>
-
-    <!-- ログタブ -->
+    <!-- ========== 実行ログタブ ========== -->
     <section id="tab-logs" class="tab-content">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <button id="btn-refresh-logs" class="btn btn-small">更新</button>
+        <span id="log-auto-refresh-indicator" style="font-size:11px;color:var(--text-muted)"></span>
+      </div>
       <table id="log-table" class="log-table">
         <thead>
           <tr>
             <th>日時</th>
+            <th>経過</th>
             <th>施設</th>
             <th>タスク</th>
-            <th>ステータス</th>
+            <th>ステータス / 進捗</th>
             <th>件数</th>
-            <th>エラー</th>
+            <th>詳細</th>
           </tr>
         </thead>
         <tbody id="log-tbody">
-          <tr><td colspan="6" class="loading">読み込み中...</td></tr>
+          <tr><td colspan="7" class="loading">読み込み中...</td></tr>
         </tbody>
       </table>
     </section>

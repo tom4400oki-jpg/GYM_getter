@@ -7,6 +7,12 @@ import sys
 import os
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 def check_playwright():
     """Playwright のブラウザがインストール済みか確認"""

@@ -52,8 +52,25 @@ class AvailabilitySlot(Base):
     date = Column(String)                # YYYY-MM-DD
     time_start = Column(String)          # HH:MM
     time_end = Column(String)            # HH:MM
-    status = Column(String)              # available / occupied / lottery / closed / unknown
+    status = Column(String)              # available / partial / occupied / closed / open / unknown
+    status_raw = Column(String)          # ふれあいネット元の表示文字（例: 一部空き）
+    booking_href = Column(String)        # 予約クリック用URL（空きの場合のみ）
+    booking_type = Column(String, default="reservation")  # reservation / lottery
     checked_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FacilityArea(Base):
+    """ふれあいネットから発見した予約可能エリア一覧"""
+    __tablename__ = "facility_areas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    facility_id = Column(String, nullable=False)
+    area_name = Column(String, nullable=False)   # サイト上の実際のリンクテキスト
+    area_index = Column(Integer)                 # 施設一覧ページ内の出現順（0始まり）
+    booking_type = Column(String, nullable=False)  # reservation / lottery
+    discovered_at = Column(DateTime, default=datetime.utcnow)
+    last_checked = Column(DateTime)
+    check_status = Column(String)                # null / running / success / error
 
 
 class ScrapeLog(Base):
@@ -68,3 +85,4 @@ class ScrapeLog(Base):
     status = Column(String)              # running / success / error
     error_message = Column(Text)
     result_count = Column(Integer, default=0)
+    detail_log = Column(JSON)            # スクレイパーの詳細ログ [{time, msg}]
