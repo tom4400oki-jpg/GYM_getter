@@ -17,6 +17,8 @@ import os
 import sys
 import json
 import asyncio
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -51,6 +53,10 @@ OUTPUT_PATH = ROOT / "web" / "public" / "data.json"
 WEEKDAYS_JA = ["月", "火", "水", "木", "金", "土", "日"]
 PERIOD_ORDER = ["午前", "午後1", "午後2", "夜間"]
 RESERVABLE = ("available", "partial")  # 予約可能とみなす
+
+APP_URL = "https://gym-getter.web.app"
+LIVE_DATA_URL = f"{APP_URL}/data.json"
+SHORT_AREA = {"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"}
 
 
 def _run_async(coro):
@@ -144,8 +150,84 @@ def _build_payload(records: list[dict]) -> dict:
     }
 
 
+# ──────────────────────────────────────────
+# 空き通知（前回=公開中の data.json と差分を取り、新着のみ通知）
+# ──────────────────────────────────────────
+
+def _reservable_keys(payload: dict) -> dict:
+    """予約可能な枠の集合を {(date, area, label): True} で返す。
+    label は時間帯（午前等）。時間帯不明な日は '終日'。"""
+    keys: dict[tuple, str] = {}
+    for day in payload.get("days", []):
+        date = day["date"]
+        wd = day.get("weekday", "")
+        for area, a in day.get("byArea", {}).items():
+            periods = a.get("periods") or {}
+            if periods:
+                for p, st in periods.items():
+                    if st in RESERVABLE:
+                        keys[(date, area, p)] = wd
+            elif a.get("status") in RESERVABLE:
+                keys[(date, area, "終日")] = wd
+    return keys
+
+
+def _fetch_previous() -> dict | None:
+    """公開中の data.json（前回結果）を取得。失敗時は None。"""
+    try:
+        req = urllib.request.Request(LIVE_DATA_URL, headers={"Cache-Control": "no-cache"})
+        with urllib.request.urlopen(req, timeout=15) as res:
+            return json.loads(res.read().decode("utf-8"))
+    except Exception as e:
+        print(f"[通知] 前回データ取得不可（初回扱い）: {e}", flush=True)
+        return None
+
+
+def _build_notify_message(new_keys: dict) -> str:
+    """新着枠を Discord 用メッセージ文字列に整形する。"""
+    grouped: dict[tuple, list] = {}
+    wd_map: dict[str, str] = {}
+    for (date, area, label), wd in sorted(new_keys.items()):
+        grouped.setdefault((date, area), []).append(label)
+        wd_map[date] = wd
+
+    lines = ["🏀 **高津スポーツセンター 新着の空き**"]
+    for (date, area) in sorted(grouped.keys()):
+        md = date[5:].replace("-", "/")
+        labels = grouped[(date, area)]
+        labels = [l for l in PERIOD_ORDER if l in labels] + [l for l in labels if l == "終日"]
+        short = SHORT_AREA.get(area, area)
+        lines.append(f"・{md}({wd_map.get(date,'')}) {short} … {'・'.join(labels)}")
+    lines.append(f"\n▶ {APP_URL}")
+    return "\n".join(lines)[:1900]
+
+
+def _notify_discord(new_keys: dict) -> None:
+    """新着の予約可能枠を Discord Webhook に通知する。"""
+    webhook = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
+    if not webhook:
+        print("[通知] DISCORD_WEBHOOK_URL 未設定のため通知スキップ", flush=True)
+        return
+
+    content = _build_notify_message(new_keys)
+    grouped_count = len({(d, a) for (d, a, _l) in new_keys})
+    try:
+        data = json.dumps({"content": content}).encode("utf-8")
+        req = urllib.request.Request(
+            webhook, data=data, headers={"Content-Type": "application/json"}
+        )
+        urllib.request.urlopen(req, timeout=15)
+        print(f"[通知] Discord送信OK（{grouped_count}件）", flush=True)
+    except Exception as e:
+        print(f"[通知] Discord送信失敗: {e}", flush=True)
+
+
 def main() -> int:
     print(f"=== 高津スポーツセンター 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
+
+    # 通知用に前回（公開中）データを先に取得
+    previous = _fetch_previous()
+
     records = _run_async(_collect_records())
     payload = _build_payload(records)
 
@@ -160,6 +242,20 @@ def main() -> int:
     )
     print(f"=== 完了: {n_days}日 × {len(payload['areas'])}エリア / 予約可能{n_reservable}日 ===", flush=True)
     print(f"出力: {OUTPUT_PATH}", flush=True)
+
+    # 差分通知（取得が空（ログイン失敗等）の場合は誤通知を避けるためスキップ）
+    if payload["days"]:
+        new_now = _reservable_keys(payload)
+        if previous is None:
+            print("[通知] 前回データなしのため初回は通知しません", flush=True)
+        else:
+            old = _reservable_keys(previous)
+            newly = {k: v for k, v in new_now.items() if k not in old}
+            if newly:
+                print(f"[通知] 新着の予約可能枠 {len(newly)}件", flush=True)
+                _notify_discord(newly)
+            else:
+                print("[通知] 新着なし", flush=True)
     return 0
 
 
