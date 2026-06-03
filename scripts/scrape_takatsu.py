@@ -251,6 +251,17 @@ def _notify_line(added: dict, removed: dict) -> None:
         print(f"[通知] LINE送信失敗: {e} {body}", flush=True)
 
 
+def _set_output(key: str, value: str) -> None:
+    """GitHub Actions のステップ出力に書き込む（ローカルでは無視）。"""
+    gh = os.getenv("GITHUB_OUTPUT")
+    if gh:
+        try:
+            with open(gh, "a", encoding="utf-8") as f:
+                f.write(f"{key}={value}\n")
+        except Exception:
+            pass
+
+
 def main() -> int:
     print(f"=== 高津スポーツセンター 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
 
@@ -260,10 +271,19 @@ def main() -> int:
     records = _run_async(_collect_records())
     payload = _build_payload(records)
 
+    n_days = len(payload["days"])
+
+    # メンテ時間/ログイン停止/ナビ失敗で空 → 上書きせず終了（ライブの既存データを保持）
+    if n_days == 0:
+        print("[警告] 取得0件（ふれあいネットのメンテ時間/ログイン停止の可能性）", flush=True)
+        print("       data.json は更新せず、ビルド/デプロイ/通知をスキップします", flush=True)
+        _set_output("deploy", "false")
+        return 0
+
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    _set_output("deploy", "true")
 
-    n_days = len(payload["days"])
     n_reservable = sum(
         1
         for d in payload["days"]

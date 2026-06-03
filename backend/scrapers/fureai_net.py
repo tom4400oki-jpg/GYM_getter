@@ -136,6 +136,19 @@ class FureaiNetScraper(BaseScraper):
                 # ログアウトボタンがあれば成功
                 success = await self.page.locator("input[value='ログアウト']").count() > 0
 
+            # メンテ時間（ログイン機能停止）/エラー画面の検出
+            if success:
+                try:
+                    page_title = await self.page.title()
+                    body_txt = await self.page.evaluate(
+                        "() => document.body ? document.body.innerText : ''"
+                    )
+                except Exception:
+                    page_title, body_txt = "", ""
+                if "ログイン機能停止" in body_txt or "エラー画面" in page_title:
+                    self._log("ログイン不可: ふれあいネットのメンテナンス時間（ログイン機能停止）")
+                    success = False
+
             self.is_logged_in = success
             if self.is_logged_in:
                 self._log(f"ログイン成功: {self.page.url}")
