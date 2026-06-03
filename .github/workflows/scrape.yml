@@ -1,0 +1,62 @@
+name: 高津 空き確認・自動デプロイ
+
+on:
+  schedule:
+    # UTC 表記。JST では 09:00 / 18:00 / 翌06:00 の1日3回
+    - cron: "0 0,9,21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scrape-deploy
+  cancel-in-progress: false
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python 依存インストール
+        run: |
+          pip install -r requirements-scrape.txt
+          python -m playwright install --with-deps chromium
+
+      - name: 空き状況スクレイプ
+        env:
+          FUREAI_USER_ID: ${{ secrets.FUREAI_USER_ID }}
+          FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
+          FUREAI_SECURITY_NUMBER: ${{ secrets.FUREAI_SECURITY_NUMBER }}
+          SCRAPE_DAYS_AHEAD: "30"
+          HEADLESS: "true"
+          PYTHONUTF8: "1"
+        run: python scripts/scrape_takatsu.py
+
+      - name: Node セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Web ビルド
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Firebase Hosting へデプロイ
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: gym-getter
+          channelId: live

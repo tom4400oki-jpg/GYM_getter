@@ -16,3 +16,6 @@ venv/
 
 # スクリーンショット
 screenshots/
+
+# Firebase デプロイキャッシュ
+.firebase/

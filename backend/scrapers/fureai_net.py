@@ -66,6 +66,39 @@ STATUS_MAP = {
     "受付期間外":   "out_of_period",
 }
 
+# 全角数字→半角（午後１→午後1）
+_PERIOD_TRANS = str.maketrans("０１２３４５６７８９", "0123456789")
+
+
+def map_status(alt: str) -> str:
+    """img の alt 文字列からステータスを判定（部分一致）。
+    月間カレンダーの空き日は '2026年6月8日一部空き' のように日付が前置されるため
+    完全一致ではなく部分一致で判定する。順序が重要（一部空き/全て空きを先に）。"""
+    a = alt or ""
+    if "受付期間外" in a:
+        return "out_of_period"
+    if "一部空き" in a:
+        return "partial"
+    if "全て空き" in a:
+        return "available"
+    if "予約あり" in a:
+        return "occupied"
+    if "一般開放" in a:
+        return "open"
+    if "保守" in a or "主催事業" in a:
+        return "closed"
+    if "休館" in a:
+        return "closed"
+    if "雨" in a:
+        return "rain"
+    if "取消" in a:
+        return "cancelling"
+    if "開放予定" in a:
+        return "planned"
+    if "空き" in a:  # 時間帯ページの「空き」（一部/全ての判定後）
+        return "available"
+    return "unknown"
+
 
 class FureaiNetScraper(BaseScraper):
     """ふれあいネット専用スクレイパー"""
@@ -317,9 +350,9 @@ class FureaiNetScraper(BaseScraper):
                 return result;
             }
         """)
-        # status_raw → status
+        # status_raw → status（部分一致で判定）
         for d in data["days"].values():
-            d["status"] = STATUS_MAP.get(d["status_raw"], "unknown")
+            d["status"] = map_status(d["status_raw"])
         return data
 
     # ──────────────────────────────────────────
@@ -737,6 +770,142 @@ class FureaiNetScraper(BaseScraper):
             if "detected_at" not in s:
                 s["detected_at"] = datetime.utcnow().isoformat()
         return steps
+
+    # ──────────────────────────────────────────
+    # 時間帯（午前/午後1/午後2/夜間）ベースの空き確認
+    # ──────────────────────────────────────────
+
+    async def _click_day(self, month: int, day: int) -> bool:
+        """月間カレンダーで指定日の selectDay リンクをクリックし時間帯ページへ遷移"""
+        try:
+            async with self.page.expect_navigation(wait_until="networkidle"):
+                await self.page.evaluate(
+                    """args => {
+                        const [m, d] = args;
+                        const re = new RegExp(',\\\\s*' + m + ',\\\\s*' + d + '\\\\)');
+                        const a = [...document.querySelectorAll('a')]
+                            .find(a => /selectDay/.test(a.href) && re.test(a.href));
+                        if (a) a.click(); else throw new Error('day link not found ' + m + '/' + d);
+                    }""",
+                    [month, day],
+                )
+            return True
+        except Exception as e:
+            self._log(f"日リンククリック失敗 ({month}/{day}): {e}")
+            return False
+
+    async def _extract_day_periods(self, base_year: int, base_month: int) -> dict:
+        """時間帯貸しページ（週表示）から { 'YYYY-MM-DD': {period: status} } を抽出する。
+        行 = 午前/午後1/午後2/夜間、列 = 7日。img alt 例: '6月8日月曜日午後２空き'"""
+        raw = await self.page.evaluate(r"""() => {
+            const tables = [...document.querySelectorAll('table')];
+            for (const t of tables) {
+                const rows = [...t.querySelectorAll('tr')].map(tr =>
+                    [...tr.querySelectorAll('th,td')].map(c => {
+                        const img = c.querySelector('img');
+                        return { text: c.innerText.trim().replace(/\s+/g, ''), alt: img ? img.alt : '' };
+                    })
+                );
+                if (rows.some(r => r[0] && /午前|午後|夜間/.test(r[0].text))) return rows;
+            }
+            return null;
+        }""")
+        out: dict = {}
+        if not raw:
+            return out
+        for r in raw:
+            if not r:
+                continue
+            label = r[0]["text"]
+            if not re.search(r"午前|午後|夜間", label):
+                continue
+            period = label.translate(_PERIOD_TRANS)
+            for cell in r[1:]:
+                alt = cell.get("alt", "")
+                if not alt:
+                    continue
+                m = re.search(r"(\d+)月(\d+)日", alt)
+                if not m:
+                    continue
+                mo, da = int(m.group(1)), int(m.group(2))
+                yr = base_year + 1 if mo < base_month else base_year
+                date_str = f"{yr}-{mo:02d}-{da:02d}"
+                out.setdefault(date_str, {})[period] = map_status(alt)
+        return out
+
+    async def check_area_days(
+        self,
+        facility_id: str,
+        area_name: str,
+        area_index: int,
+        booking_type: str,
+        target_dates: list[str],
+        on_progress=None,
+    ) -> list[dict]:
+        """指定エリアの各日について、日レベル状態＋（空き日のみ）時間帯別状態を返す。
+        戻り値: [{facility_id, area_name, booking_type, date, status, status_raw, periods}]
+        periods = {'午前':'occupied', '午後1':'available', ...}（取得できた日のみ）"""
+        if not self.is_logged_in:
+            if not await self.login():
+                return []
+
+        area = {"name": area_name, "index": area_index}
+        if on_progress:
+            on_progress(f"{area_name} チェック開始")
+
+        if not await self._navigate_to_monthly_calendar(facility_id, area, booking_type):
+            return []
+
+        target_months = sorted({d[:7] for d in target_dates})
+        results: dict = {}
+        period_cache: dict = {}
+
+        for month_str in target_months:
+            year, month = map(int, month_str.split("-"))
+            cur = await self._extract_monthly_calendar()
+            if cur["year_month"] != month_str:
+                await self._move_to_month(year, month)
+                cur = await self._extract_monthly_calendar()
+
+            month_dates = [d for d in target_dates if d.startswith(month_str)]
+
+            # 日レベル状態を記録
+            for date_str in month_dates:
+                day = str(int(date_str.split("-")[2]))
+                dd = cur["days"].get(day)
+                results[date_str] = {
+                    "facility_id": facility_id,
+                    "area_name": area_name,
+                    "booking_type": booking_type,
+                    "date": date_str,
+                    "status": dd["status"] if dd else "unknown",
+                    "status_raw": dd["status_raw"] if dd else "",
+                    "periods": {},
+                }
+
+            # 空き（全て空き/一部空き）の日をドリルし、週単位で時間帯を取得
+            for date_str in month_dates:
+                if date_str in period_cache:
+                    continue
+                day = str(int(date_str.split("-")[2]))
+                dd = cur["days"].get(day)
+                if dd and dd["clickable"] and dd["status"] in ("available", "partial"):
+                    if await self._click_day(month, int(day)):
+                        week = await self._extract_day_periods(year, month)
+                        period_cache.update(week)
+                        if on_progress:
+                            on_progress(f"{area_name} {date_str} 時間帯取得")
+                        # 月間カレンダーへ戻る
+                        await self._navigate_to_monthly_calendar(facility_id, area, booking_type)
+                        await self._move_to_month(year, month)
+                        cur = await self._extract_monthly_calendar()
+
+            # キャッシュから時間帯を割り当て（同じ週の予約あり/開放日にも付く）
+            for date_str in month_dates:
+                if date_str in period_cache:
+                    results[date_str]["periods"] = period_cache[date_str]
+
+        return list(results.values())
 
     def _log(self, msg: str):
         self._flow_log.append({"time": datetime.utcnow().isoformat(), "msg": msg})
