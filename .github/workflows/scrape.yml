@@ -35,7 +35,7 @@ jobs:
           FUREAI_USER_ID: ${{ secrets.FUREAI_USER_ID }}
           FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
           FUREAI_SECURITY_NUMBER: ${{ secrets.FUREAI_SECURITY_NUMBER }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           SCRAPE_DAYS_AHEAD: "30"
           HEADLESS: "true"
           PYTHONUTF8: "1"

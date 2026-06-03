@@ -191,7 +191,7 @@ def _build_notify_message(new_keys: dict) -> str:
         grouped.setdefault((date, area), []).append(label)
         wd_map[date] = wd
 
-    lines = ["🏀 **高津スポーツセンター 新着の空き**"]
+    lines = ["🏀 高津スポーツセンター 新着の空き"]
     for (date, area) in sorted(grouped.keys()):
         md = date[5:].replace("-", "/")
         labels = grouped[(date, area)]
@@ -202,24 +202,39 @@ def _build_notify_message(new_keys: dict) -> str:
     return "\n".join(lines)[:1900]
 
 
-def _notify_discord(new_keys: dict) -> None:
-    """新着の予約可能枠を Discord Webhook に通知する。"""
-    webhook = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
-    if not webhook:
-        print("[通知] DISCORD_WEBHOOK_URL 未設定のため通知スキップ", flush=True)
+LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
+
+
+def _notify_line(new_keys: dict) -> None:
+    """新着の予約可能枠を LINE（Messaging API ブロードキャスト）で通知する。
+    LINE公式アカウントを友だち追加したメンバー全員に届く。"""
+    token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+    if not token:
+        print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
 
     content = _build_notify_message(new_keys)
     grouped_count = len({(d, a) for (d, a, _l) in new_keys})
     try:
-        data = json.dumps({"content": content}).encode("utf-8")
+        data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
-            webhook, data=data, headers={"Content-Type": "application/json"}
+            LINE_BROADCAST_URL,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
         )
         urllib.request.urlopen(req, timeout=15)
-        print(f"[通知] Discord送信OK（{grouped_count}件）", flush=True)
+        print(f"[通知] LINE送信OK（{grouped_count}件）", flush=True)
     except Exception as e:
-        print(f"[通知] Discord送信失敗: {e}", flush=True)
+        body = ""
+        if isinstance(e, urllib.error.HTTPError):
+            try:
+                body = e.read().decode("utf-8")[:200]
+            except Exception:
+                pass
+        print(f"[通知] LINE送信失敗: {e} {body}", flush=True)
 
 
 def main() -> int:
@@ -253,7 +268,7 @@ def main() -> int:
             newly = {k: v for k, v in new_now.items() if k not in old}
             if newly:
                 print(f"[通知] 新着の予約可能枠 {len(newly)}件", flush=True)
-                _notify_discord(newly)
+                _notify_line(newly)
             else:
                 print("[通知] 新着なし", flush=True)
     return 0
