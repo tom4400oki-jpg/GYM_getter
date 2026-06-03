@@ -60,7 +60,7 @@ export default function App() {
   const [data, setData] = useState<GymData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [onlyReservable, setOnlyReservable] = useState(false);
+  const [onlyReservable, setOnlyReservable] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   async function load() {
