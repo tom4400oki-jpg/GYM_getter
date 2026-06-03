@@ -200,17 +200,10 @@ def _format_keys(keys: dict) -> list:
     return out
 
 
-def _build_notify_message(added: dict, removed: dict) -> str:
-    """空き状況の変化（追加/消失）を通知メッセージに整形する。"""
-    lines = ["🏀 高津スポーツセンター 空き状況に変化"]
-    if added:
-        lines.append("")
-        lines.append("🆕 新しく予約できる空き")
-        lines += _format_keys(added)
-    if removed:
-        lines.append("")
-        lines.append("✖ 埋まった枠")
-        lines += _format_keys(removed)
+def _build_notify_message(added: dict) -> str:
+    """新しく予約できるようになった枠だけを通知メッセージに整形する。"""
+    lines = ["🏀 高津スポーツセンター 新着の空き"]
+    lines += _format_keys(added)
     lines.append("")
     lines.append(f"▶ {APP_URL}")
     return "\n".join(lines)[:1900]
@@ -219,16 +212,16 @@ def _build_notify_message(added: dict, removed: dict) -> str:
 LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
 
 
-def _notify_line(added: dict, removed: dict) -> None:
-    """空き状況の変化を LINE（Messaging API ブロードキャスト）で通知する。
+def _notify_line(added: dict) -> None:
+    """新しく予約できるようになった枠を LINE（Messaging API ブロードキャスト）で通知する。
     LINE公式アカウントを友だち追加したメンバー全員に届く。"""
     token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
     if not token:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
 
-    content = _build_notify_message(added, removed)
-    grouped_count = len({(d, a) for (d, a, _l) in {**added, **removed}})
+    content = _build_notify_message(added)
+    grouped_count = len({(d, a) for (d, a, _l) in added})
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
@@ -300,12 +293,11 @@ def main() -> int:
         else:
             old = _reservable_keys(previous)
             added = {k: v for k, v in new_now.items() if k not in old}
-            removed = {k: v for k, v in old.items() if k not in new_now}
-            if added or removed:
-                print(f"[通知] 変化検出 追加{len(added)} / 消失{len(removed)}", flush=True)
-                _notify_line(added, removed)
+            if added:
+                print(f"[通知] 新着の予約可能枠 {len(added)}件", flush=True)
+                _notify_line(added)
             else:
-                print("[通知] 変化なし", flush=True)
+                print("[通知] 新着なし", flush=True)
     return 0
 
 
