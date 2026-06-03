@@ -2,8 +2,9 @@ name: 高津 空き確認・自動デプロイ
 
 on:
   schedule:
-    # UTC 表記。JST では 09:00 / 18:00 / 翌06:00 の1日3回
-    - cron: "0 0,9,21 * * *"
+    # UTC 表記。JST では 09:00 / 15:00 / 21:00 の1日3回
+    # （深夜のメンテ時間（ログイン停止 ≒ 2〜6時頃）を避けた時間帯）
+    - cron: "0 0,6,12 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -31,6 +32,7 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: 空き状況スクレイプ
+        id: scrape
         env:
           FUREAI_USER_ID: ${{ secrets.FUREAI_USER_ID }}
           FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
@@ -49,12 +51,14 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Web ビルド
+        if: steps.scrape.outputs.deploy == 'true'
         working-directory: web
         run: |
           npm install --no-audit --no-fund
           npm run build
 
       - name: Firebase Hosting へデプロイ
+        if: steps.scrape.outputs.deploy == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
