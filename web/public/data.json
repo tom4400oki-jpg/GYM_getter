@@ -1,0 +1,718 @@
+{
+  "facility": "高津スポーツセンター",
+  "bookingType": "reservation",
+  "updatedAt": "2026-06-03T06:16:26.458010+00:00",
+  "areas": [
+    "大体育室半面Ａ",
+    "大体育室半面Ｂ",
+    "小体育室"
+  ],
+  "periodOrder": [
+    "午前",
+    "午後1",
+    "午後2",
+    "夜間"
+  ],
+  "days": [
+    {
+      "date": "2026-06-03",
+      "weekday": "水",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-04",
+      "weekday": "木",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-05",
+      "weekday": "金",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "out_of_period",
+          "statusRaw": "受付期間外",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-06",
+      "weekday": "土",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-07",
+      "weekday": "日",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-08",
+      "weekday": "月",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "partial",
+          "statusRaw": "2026年6月8日一部空き",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "available",
+            "夜間": "open"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-09",
+      "weekday": "火",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "open",
+            "夜間": "open"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-10",
+      "weekday": "水",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-11",
+      "weekday": "木",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "partial",
+          "statusRaw": "2026年6月11日一部空き",
+          "periods": {
+            "午前": "closed",
+            "午後1": "occupied",
+            "午後2": "available",
+            "夜間": "occupied"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "closed",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-12",
+      "weekday": "金",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "open",
+            "夜間": "open"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "open",
+            "夜間": "open"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-13",
+      "weekday": "土",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-14",
+      "weekday": "日",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "occupied"
+          }
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "weekday": "月",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "午前": "occupied",
+            "午後1": "occupied",
+            "午後2": "occupied",
+            "夜間": "open"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-16",
+      "weekday": "火",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "open",
+            "夜間": "open"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-17",
+      "weekday": "水",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "partial",
+          "statusRaw": "2026年6月17日一部空き",
+          "periods": {
+            "午前": "open",
+            "午後1": "open",
+            "午後2": "available",
+            "夜間": "occupied"
+          }
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-18",
+      "weekday": "木",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-19",
+      "weekday": "金",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-20",
+      "weekday": "土",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-21",
+      "weekday": "日",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-22",
+      "weekday": "月",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "closed",
+          "statusRaw": "休館日",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "closed",
+          "statusRaw": "休館日",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "closed",
+          "statusRaw": "休館日",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-23",
+      "weekday": "火",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-24",
+      "weekday": "水",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-25",
+      "weekday": "木",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-26",
+      "weekday": "金",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-27",
+      "weekday": "土",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-28",
+      "weekday": "日",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-29",
+      "weekday": "月",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-06-30",
+      "weekday": "火",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "open",
+          "statusRaw": "一般開放",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-07-01",
+      "weekday": "水",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-07-02",
+      "weekday": "木",
+      "byArea": {
+        "大体育室半面Ａ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "大体育室半面Ｂ": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "小体育室": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    }
+  ]
+}
