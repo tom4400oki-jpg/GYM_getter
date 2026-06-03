@@ -183,38 +183,52 @@ def _fetch_previous() -> dict | None:
         return None
 
 
-def _build_notify_message(new_keys: dict) -> str:
-    """新着枠を Discord 用メッセージ文字列に整形する。"""
+def _format_keys(keys: dict) -> list:
+    """{(date, area, label): weekday} を ・MM/DD(曜) エリア … 時間帯 の行リストに整形。"""
     grouped: dict[tuple, list] = {}
     wd_map: dict[str, str] = {}
-    for (date, area, label), wd in sorted(new_keys.items()):
+    for (date, area, label), wd in sorted(keys.items()):
         grouped.setdefault((date, area), []).append(label)
         wd_map[date] = wd
-
-    lines = ["🏀 高津スポーツセンター 新着の空き"]
+    out = []
     for (date, area) in sorted(grouped.keys()):
         md = date[5:].replace("-", "/")
         labels = grouped[(date, area)]
         labels = [l for l in PERIOD_ORDER if l in labels] + [l for l in labels if l == "終日"]
         short = SHORT_AREA.get(area, area)
-        lines.append(f"・{md}({wd_map.get(date,'')}) {short} … {'・'.join(labels)}")
-    lines.append(f"\n▶ {APP_URL}")
+        out.append(f"・{md}({wd_map.get(date,'')}) {short} … {'・'.join(labels)}")
+    return out
+
+
+def _build_notify_message(added: dict, removed: dict) -> str:
+    """空き状況の変化（追加/消失）を通知メッセージに整形する。"""
+    lines = ["🏀 高津スポーツセンター 空き状況に変化"]
+    if added:
+        lines.append("")
+        lines.append("🆕 新しく予約できる空き")
+        lines += _format_keys(added)
+    if removed:
+        lines.append("")
+        lines.append("✖ 埋まった枠")
+        lines += _format_keys(removed)
+    lines.append("")
+    lines.append(f"▶ {APP_URL}")
     return "\n".join(lines)[:1900]
 
 
 LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
 
 
-def _notify_line(new_keys: dict) -> None:
-    """新着の予約可能枠を LINE（Messaging API ブロードキャスト）で通知する。
+def _notify_line(added: dict, removed: dict) -> None:
+    """空き状況の変化を LINE（Messaging API ブロードキャスト）で通知する。
     LINE公式アカウントを友だち追加したメンバー全員に届く。"""
     token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
     if not token:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
 
-    content = _build_notify_message(new_keys)
-    grouped_count = len({(d, a) for (d, a, _l) in new_keys})
+    content = _build_notify_message(added, removed)
+    grouped_count = len({(d, a) for (d, a, _l) in {**added, **removed}})
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
@@ -265,12 +279,13 @@ def main() -> int:
             print("[通知] 前回データなしのため初回は通知しません", flush=True)
         else:
             old = _reservable_keys(previous)
-            newly = {k: v for k, v in new_now.items() if k not in old}
-            if newly:
-                print(f"[通知] 新着の予約可能枠 {len(newly)}件", flush=True)
-                _notify_line(newly)
+            added = {k: v for k, v in new_now.items() if k not in old}
+            removed = {k: v for k, v in old.items() if k not in new_now}
+            if added or removed:
+                print(f"[通知] 変化検出 追加{len(added)} / 消失{len(removed)}", flush=True)
+                _notify_line(added, removed)
             else:
-                print("[通知] 新着なし", flush=True)
+                print("[通知] 変化なし", flush=True)
     return 0
 
 
