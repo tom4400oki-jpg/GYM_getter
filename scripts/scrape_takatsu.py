@@ -235,6 +235,13 @@ def _reservable_keys(payload: dict, only_areas: list[str] | None = None) -> dict
     return keys
 
 
+def _clean_secret(s: str) -> str:
+    """トークン等から前後空白と BOM(\\ufeff) を除去する。
+    Windows で作成した Secret に BOM が混入すると、urllib が Authorization ヘッダを
+    latin-1 でエンコードできず送信が丸ごと失敗する（.strip() は BOM を消さない）。"""
+    return s.replace("﻿", "").strip()
+
+
 def _fetch_previous() -> dict | None:
     """公開中の data.json（前回結果）を取得。失敗時は None。"""
     try:
@@ -275,7 +282,7 @@ def _build_notify_message(added: dict) -> str:
 def _notify_line(added: dict) -> None:
     """新しく予約できるようになった枠を LINE（Messaging API ブロードキャスト）で通知する。
     LINE公式アカウントを友だち追加したメンバー全員に届く。"""
-    token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+    token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
     if not token:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
@@ -312,8 +319,8 @@ def _notify_admin(reason: str) -> None:
     print(f"::warning title=GYM Getter::{msg}", flush=True)
     print(f"[管理者通知] {msg}", flush=True)
 
-    token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
-    admin = os.getenv("LINE_ADMIN_USER_ID", "").strip()
+    token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
+    admin = _clean_secret(os.getenv("LINE_ADMIN_USER_ID", ""))
     if not (token and admin):
         return
     try:
