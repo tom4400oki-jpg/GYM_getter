@@ -40,6 +40,8 @@ jobs:
           FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
           FUREAI_SECURITY_NUMBER: ${{ secrets.FUREAI_SECURITY_NUMBER }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          # 管理者向けエラー通知の宛先（任意。未設定なら Actions 注釈＋ジョブ失敗のみ）
+          LINE_ADMIN_USER_ID: ${{ secrets.LINE_ADMIN_USER_ID }}
           SCRAPE_DAYS_AHEAD: "30"
           HEADLESS: "true"
           PYTHONUTF8: "1"

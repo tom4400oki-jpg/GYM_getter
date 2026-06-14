@@ -1,87 +1,105 @@
 # GYM Getter 改善計画 (plan.md)
 
-高津スポーツセンターの**予約空き状況**をふれあいネットから自動取得し、身内でWeb共有するアプリ。
+高津スポーツセンターの**予約空き状況**をふれあいネットから自動取得し、身内に Web ＋ LINE で共有するアプリ。
 「シンプル・無料（クレジットカード不要）」を最優先にした最小構成。
-
-> 旧「Firebase全面移行＋Cloud Run」案は将来の拡張案として末尾に保持。
 
 ---
 
-## 現行アーキテクチャ（最シンプル・無料版）
+## 現行アーキテクチャ（本番稼働中）
 ```
-GitHub Actions (cron 1日3回 + 手動)
-  ├─ scripts/scrape_takatsu.py  (Playwright, 既存FureaiNetScraperを再利用 / 3エリア)
-  │     └─ web/public/data.json を生成
-  └─ web を build → Firebase Hosting へデプロイ
+GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
+  ├─ scripts/scrape_takatsu.py  (Playwright, FureaiNetScraper.check_area_days を利用 / 3エリア)
+  │     ├─ web/public/data.json を生成
+  │     └─ 公開中 data.json と差分を取り「新しく空いた枠だけ」LINE通知（Messaging API ブロードキャスト）
+  └─ web を build → Firebase Hosting (live) へデプロイ
                           │
                           ▼
                  Firebase Hosting (静的SPA, 無料Spark)
-                 Vite+React+TS+Tailwind+shadcn が data.json を表示（認証なし・時間帯まで）
+                 Vite+React+TS+Tailwind が data.json を表示（認証なし・時間帯まで）
 ```
-- 定期実行 = **GitHub Actions**（無料・カード不要）。Cloud Run/Schedulerは Blaze=カード必須のため不採用。
+- 定期実行 = **GitHub Actions**（無料・カード不要）。Cloud Run/Scheduler は Blaze=カード必須のため不採用。
 - 保存 = 静的 `data.json`（DBなし）
 - 対象 = 高津スポーツセンターのみ / `reservation`（予約）/ 3エリア（大体育室半面Ａ・Ｂ・小体育室）
-- 表示 = 日×エリアの空き○/一部△/予約あり×、空きの日は時間帯まで展開。小さめ密表示。
-- 既存 FastAPI / SQLite / APScheduler 一式は触らず残置。
+- 表示 = 日×エリアの空き○/一部△/予約あり×、空きの日は時間帯（午前/午後1/午後2/夜間）まで展開。
+- 通知 = `LINE_CHANNEL_ACCESS_TOKEN`（GitHub Secrets）。前回比で**新しく予約可能になった枠のみ**通知。
+- メンテ時間等で取得0件のときは `data.json` を上書きせず deploy/通知をスキップ（ライブ保持）。
 
 ## 主要ファイル
-- `scripts/scrape_takatsu.py` … スタンドアロン・スクレイパー（DB非依存）。`data.json`生成
-- `requirements-scrape.txt` … playwright / python-dotenv のみ
-- `web/` … Vite+React+TS+Tailwind+shadcn の静的SPA（`src/App.tsx`, `src/lib/schema.ts`(Zod), `src/components/ui/*`）
+- `scripts/scrape_takatsu.py` … スタンドアロン・スクレイパー（DB非依存）。`data.json` 生成＋LINE差分通知
+- `backend/scrapers/fureai_net.py` … `FureaiNetScraper`（`check_area_days` / `FACILITY_NAV` / `get_target_dates` / `map_status`）
+- `backend/scrapers/base.py` … Playwright ライフサイクル管理のみの基底クラス
+- `requirements-scrape.txt` … playwright / python-dotenv のみ（現役の唯一の依存定義）
+- `web/` … Vite+React+TS+Tailwind の静的SPA（`src/App.tsx`, `src/lib/schema.ts`(Zod), `src/components/ui/*`）
 - `firebase.json` / `.firebaserc` … Hosting設定（public=web/dist, SPA rewrite, data.jsonはno-cache）
 - `.github/workflows/scrape.yml` … スクレイプ→build→Hostingデプロイ
 
-## data.json スキーマ
+## data.json スキーマ（periods 形式・現行）
 ```json
-{ "facility":"高津スポーツセンター","bookingType":"reservation","updatedAt":"…",
+{ "facility":"高津スポーツセンター","bookingType":"reservation","updatedAt":"…(ISO/UTC)",
   "areas":["大体育室半面Ａ","大体育室半面Ｂ","小体育室"],
-  "days":[{"date":"2026-06-04","weekday":"木",
-    "byArea":{"大体育室半面Ａ":{"status":"partial","statusRaw":"一部空き",
-      "slots":[{"start":"09:00","end":"11:00","status":"available"}]}}}]}
+  "periodOrder":["午前","午後1","午後2","夜間"],
+  "days":[{"date":"2026-06-14","weekday":"土",
+    "byArea":{"大体育室半面Ａ":{
+      "status":"partial","statusRaw":"一部空き",
+      "periods":{"午前":"occupied","午後1":"available","午後2":"available","夜間":"open"}
+    }}}]}
 ```
+- `periods` は「空き(○/△)の日」のみ埋まる。それ以外は `{}`（UIは日単位 status で表示）。
 
 ---
 
-## 進捗（フェーズ）
-- [x] **Step 1: スクレイパー単体** … `scripts/scrape_takatsu.py` 作成・ローカル実行で`data.json`生成を確認。
-      Windows cp932 の print クラッシュを UTF-8 固定で解消済み。ログイン成功・3エリア取得OK。
-- [x] **Step 2: 表示SPA** … `web/`(Vite+shadcn) 作成。`npm run build`成功、devでレンダリング・
-      コンソールエラーなしを確認。日×エリア表示／空きのみトグル／時間帯展開／凡例／更新ボタン。
-- [x] **Step 3: Firebase Hosting** … プロジェクト `gym-getter` に手動デプロイ完了。
-      公開URL **https://gym-getter.web.app** で30日分・空き状況を確認済み。
-      `.firebaserc` / `scrape.yml` の projectId を `gym-getter` に設定済み。
-- [ ] **Step 4: GitHub Actions 自動化**（※ユーザー操作が必要）
-      - [ ] コードを GitHub(main) に push（workflow/web/scripts を反映）
-      - [ ] GitHub Secrets 登録: `FUREAI_USER_ID` / `FUREAI_PASSWORD` / `FUREAI_SECURITY_NUMBER` /
-            `FIREBASE_SERVICE_ACCOUNT`(サービスアカウントJSON)
-      - [ ] `workflow_dispatch` で手動実行し、データ更新＋自動デプロイを確認 → cron 有効化
+## 進捗（初期構築フェーズ）
+- [x] **Step 1: スクレイパー単体** … `scripts/scrape_takatsu.py`。ログイン・3エリア取得・`data.json` 生成OK。
+- [x] **Step 2: 表示SPA** … `web/`(Vite)。日×エリア表示／空きのみトグル／時間帯展開／凡例／更新ボタン。
+- [x] **Step 3: Firebase Hosting** … `gym-getter` にデプロイ。公開URL **https://gym-getter.web.app**。
+- [x] **Step 4: GitHub Actions 自動化** … Secrets 登録済み・cron 90分で本番稼働中。LINE新着通知も稼働。
+
+## 改善フェーズ（メンテ性・安定性・拡張性・満足度）
+> 詳細計画: `~/.claude/plans/logical-humming-milner.md`
+- [x] **Phase 0: 旧スタック削除＋ドキュメント同期**
+      - 旧 FastAPI/SQLite/vanilla frontend 一式・`run.py`・`test_*.py`・探索用スクリプト・旧 `requirements.txt` を削除。
+      - `fureai_net.py` の未使用メソッド（`check_availability`/`check_single_area`/`discover_*`/`detect_booking_flow`/
+        `_extract_weekly_slots`/`_navigate_to_top`/`STATUS_MAP`/`_parse_date_header`）を削除（953→470行）。
+      - `base.py` を Playwright ライフサイクルのみの最小構成に。`.env.example`・`plan.md` を現状同期。
+      - 検証: 構文OK・import OK・`check_area_days` の依存メソッド全存在を確認。
+- [x] **Phase 1: 安定性ハードニング**
+      - `login()` にメンテ判定フラグ `maintenance` を追加。メンテ時間（正常）と真のログイン失敗を区別。
+      - `scrape_takatsu.py` をエリア単位の成否判定に再構成（`_collect_records`→by_area, `_area_ok`）。
+        一部失敗エリアは前回値を保持（`_overlay_previous`）＋差分通知から除外（`_reservable_keys(only_areas=)`）。
+      - 異常時の管理者通知 `_notify_admin`（Actions `::warning::` 注釈＋任意で LINE push）。
+        真のログイン失敗は exit 1 でジョブ失敗化。メンテ/全失敗は data.json 維持で exit 0。
+      - `keepalive.yml`（毎月1日空コミット）で Actions 休眠停止を防止。`scrape.yml` に `LINE_ADMIN_USER_ID` 追加。
+      - 検証: 構文OK＋純粋関数の単体テスト（area_ok/build_payload/overlay/reservable）全通過。
+- [x] **Phase 3: ユーザー体験**
+      - data.json に `reserveUrl` を追加し、ヘッダーに「予約する」ボタン（ふれあいネット予約導線）。
+      - `updatedAt` が3時間超で「データが古い可能性」警告バッジ（`isStale`）。サイレント故障の利用者側保険。
+      - PWA化: `manifest.webmanifest` / `sw.js`（data.json は素通り＝鮮度優先）/ `icon.svg` 追加、`index.html`・
+        `main.tsx` に配線。`firebase.json` に `/sw.js` の no-cache を追加。
+      - 検証: `npm run build` 成功＋dev プレビューで予約ボタン/鮮度バッジ表示・コンソールエラー0を確認。
+- [x] **Phase 2: 拡張土台（機能は足さない）**
+      - スクレイプ設定を `scrape_takatsu.py` 冒頭に集約（`FACILITY_ID`/`FACILITY_NAME`/`BOOKING_TYPE`/
+        `NOTIFY_EMOJI`/`SHORT_AREA`）。`FACILITY_NAV`(`fureai_net.py`)をエリア定義の単一の真実に。
+      - 通知見出しを `FACILITY_NAME`/`NOTIFY_EMOJI` 参照に（施設追加で関数編集不要）。施設追加手順をコメント明文化。
+      - 通知は `_notify_line`（利用者）/`_notify_admin`（管理者）に分離済み。
 
 ## ローカル実行メモ
-- スクレイプ: `py scripts/scrape_takatsu.py`（`python`はストアスタブ不可。`py`ランチャ使用）
-  - 環境変数: `SCRAPE_DAYS_AHEAD`(既定30) / `HEADLESS`(既定true) / `PYTHONUTF8=1`推奨
-  - 認証情報は `.env`（`FUREAI_USER_ID`等）
-- 表示: `cd web && npm run dev`（http://localhost:5173）
+- スクレイプ: `py scripts/scrape_takatsu.py`（`python` はストアスタブ不可。`py` ランチャ使用）
+  - 依存: `py -m pip install -r requirements-scrape.txt` ＋ `py -m playwright install chromium`
+  - 環境変数: `.env`（`FUREAI_USER_ID`/`FUREAI_PASSWORD`/`FUREAI_SECURITY_NUMBER`）。`SCRAPE_DAYS_AHEAD`(既定30) / `HEADLESS`(既定true) / `PYTHONUTF8=1` 推奨
+- 表示: `cd web && npm run dev`（http://localhost:5173）／ build: `npm run build`
 
 ## 留意点 / 将来
-- ふれあいネットがログイン無しで空き閲覧できるなら認証Secrets省略で更に簡素化可能（要確認）
-- 抽選枠・他施設・空き出現時の通知(Discord/メール)・履歴は data.json 拡張＋Actions追記で対応可
-- 認証付き/リアルタイムが欲しくなったら保存先を data.json → Firestore に差し替えて段階移行
-
----
-
-## （将来案）フル構成
-Cloud Run Jobs(Playwright)+Cloud Scheduler+Firestore+Firebase Auth(許可リスト)+Next.js。
-PC電源非依存・リアルタイム・認証保護が必要になった段階で移行。要 Blaze(カード)。
+- スクレイパーはふれあいネットの HTML 構造依存で本質的に脆い。**壊れたら気づける**仕組み（Phase 1）が最重要。
+- GitHub Actions のスケジュールは「リポジトリに60日コミットが無い」と自動停止する点に注意。
+- 抽選枠・多摩/等々力・通知フィルタ等の機能拡張は Phase 2 の設定駆動土台の上に後日追加する方針。
 
 ## 進捗ログ
-- 2026-06-03: 最シンプル・無料版に方針確定。Step1(スクレイパー)・Step2(SPA)実装＆ローカル動作確認完了。
-  Firebase設定・Actionsワークフロー雛形を作成（Step3/4はユーザーのFirebase作成・Secrets登録待ち）。
-- 2026-06-03: Firebase(gym-getter)へデプロイ。https://gym-getter.web.app 公開。
-- 2026-06-03: 【精度修正】実物と表示が不一致だった問題を解消。
-  - 原因1: 空き日のalt属性が日付前置（例「2026年6月8日一部空き」）で、STATUS_MAP完全一致が外れ
-    空き日が軒並み「−(不明)」化 → `map_status()` の部分一致に変更。
-  - 原因2: 時間帯解析が「9:00～11:00」形式前提で、実際の「午前/午後1/午後2/夜間」非対応＋
-    日リンクが `javascript:selectDay()` のためテキストクリック失敗 →
-    `_click_day()`/`_extract_day_periods()`/`check_area_days()` を新設し時間帯（週表示）を正確に取得。
-  - UIを時間帯グリッド（午前/午後1/午後2/夜間）に刷新。「予約可能」=○△のみカウント、◎一般開放は別表示。
-  - 検証: 6/8 半面Ｂ＝午前×/午後1×/午後2○/夜間◎ が実物と一致。30日/予約可能3日で再デプロイ。
+- 2026-06-03: 最シンプル・無料版に方針確定。Step1〜3（スクレイパー・SPA・Firebase）完了。
+- 2026-06-04: GitHub Actions 自動化稼働。LINE通知を「新しく空いた枠だけ」に変更。cron を90分ごと(1日16回)に。
+- 2026-06-14: 改善計画策定（メンテ/安定/拡張/満足度）。**Phase 0〜3 すべて完了**。
+  - Phase 0: 旧スタック削除・scraper デッドコード除去（953→470行）・ドキュメント同期。
+  - Phase 1: メンテ判定／エリア単位の部分失敗ガード／管理者異常アラート／keepalive／差分堅牢化。
+  - Phase 3: 予約導線ボタン／鮮度バッジ／PWA化。
+  - Phase 2: スクレイプ設定の集約・通知見出しの設定参照化・施設追加手順の明文化。
+  - 残課題（push後）: GitHub Actions で `workflow_dispatch` 実行し、実データ更新＋デプロイ＋異常時通知を確認。
+    任意で Secret `LINE_ADMIN_USER_ID` を登録すると管理者へ LINE push 通知が届く。

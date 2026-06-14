@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown, RefreshCw, ExternalLink, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
   dataSchema,
   isReservable,
+  isStale,
+  FALLBACK_RESERVE_URL,
   type GymData,
   type DayData,
 } from "@/lib/schema";
@@ -102,6 +104,8 @@ export default function App() {
 
   const areas = data?.areas ?? [];
   const periodOrder = data?.periodOrder ?? ["午前", "午後1", "午後2", "夜間"];
+  const reserveUrl = data?.reserveUrl ?? FALLBACK_RESERVE_URL;
+  const stale = data ? isStale(data.updatedAt) : false;
 
   return (
     <div className="mx-auto max-w-xl px-2 pb-12">
@@ -120,14 +124,31 @@ export default function App() {
                 </>
               )}
             </p>
+            {stale && data && (
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-amber-600">
+                <AlertTriangle className="h-3 w-3" />
+                データが古い可能性があります（自動更新が滞っているかもしれません）
+              </p>
+            )}
           </div>
-          <button
-            onClick={load}
-            className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 active:bg-slate-100"
-          >
-            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-            更新
-          </button>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <a
+              href={reserveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white active:bg-emerald-700"
+            >
+              <ExternalLink className="h-3 w-3" />
+              予約する
+            </a>
+            <button
+              onClick={load}
+              className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 active:bg-slate-100"
+            >
+              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+              更新
+            </button>
+          </div>
         </div>
         <label className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-600">
           <Switch checked={onlyReservable} onCheckedChange={setOnlyReservable} />

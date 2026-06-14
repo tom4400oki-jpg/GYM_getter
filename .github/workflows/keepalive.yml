@@ -1,0 +1,27 @@
+name: keepalive (Actions休眠停止防止)
+
+# GitHub のスケジュール実行は「リポジトリに60日コミットが無い」と自動停止する。
+# 毎月1日に空コミットを1つ積んでスケジュールを生かし続ける。
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 空コミットを push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive (Actions休眠停止防止)"
+          git push
