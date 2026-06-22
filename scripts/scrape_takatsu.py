@@ -46,6 +46,7 @@ try:
 except ImportError:
     pass
 
+from dataclasses import dataclass, field  # noqa: E402
 from backend.scrapers.fureai_net import (  # noqa: E402
     FureaiNetScraper,
     FACILITY_NAV,
@@ -53,29 +54,127 @@ from backend.scrapers.fureai_net import (  # noqa: E402
 )
 
 # ──────────────────────────────────────────
-# スクレイプ対象の設定（単一の真実）
-# 施設を増やすときは、まず backend/scrapers/fureai_net.py の FACILITY_NAV に
-# 施設・エリアを定義し、ここの FACILITY_ID 等をその施設に合わせて差し替える。
-# （複数施設の同時取得は将来の拡張。現状は1施設＝1 data.json 構成）
+# 共通設定
 # ──────────────────────────────────────────
-FACILITY_ID = "takatsu_sports_center"
-FACILITY_NAME = "高津スポーツセンター"
 BOOKING_TYPE = "reservation"
-NOTIFY_EMOJI = "🏀"
-OUTPUT_PATH = ROOT / "web" / "public" / "data.json"
-
 WEEKDAYS_JA = ["月", "火", "水", "木", "金", "土", "日"]
 PERIOD_ORDER = ["午前", "午後1", "午後2", "夜間"]
 RESERVABLE = ("available", "partial")  # 予約可能とみなす
 
 APP_URL = "https://gym-getter.web.app"
-LIVE_DATA_URL = f"{APP_URL}/data.json"
 # 予約申込みページ（施設トップではなく予約導線へ寄せる）
 RESERVE_URL = "https://www.fureai-net.city.kawasaki.jp/web/"
-SHORT_AREA = {"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"}
 
 LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
 LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
+
+
+# ──────────────────────────────────────────
+# スクレイプ対象の設定（単一の真実）
+# 施設を増やすときは、まず backend/scrapers/fureai_net.py の FACILITY_NAV に
+# 施設・エリアを定義し、ここ FACILITIES に1エントリ追加する。
+# output_filename は web/public/ 配下に出力され、Web の施設タブが読む。
+# ──────────────────────────────────────────
+@dataclass
+class FacilityConfig:
+    facility_id: str          # FACILITY_NAV のキー
+    facility_name: str        # 表示名・通知見出し
+    notify_emoji: str         # LINE通知の絵文字
+    output_filename: str      # web/public/ 配下の出力ファイル名
+    short_area: dict = field(default_factory=dict)  # 通知用の短縮エリア名
+    scrape_enabled: bool = True  # False ならスクレイプ対象外（UI/料金のみ先行追加した施設）
+
+    @property
+    def output_path(self) -> Path:
+        return ROOT / "web" / "public" / self.output_filename
+
+    @property
+    def live_data_url(self) -> str:
+        return f"{APP_URL}/{self.output_filename}"
+
+
+FACILITIES: list[FacilityConfig] = [
+    FacilityConfig(
+        facility_id="takatsu_sports_center",
+        facility_name="高津スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+    ),
+    FacilityConfig(
+        facility_id="culttz_kawasaki",
+        facility_name="カルッツかわさき",
+        notify_emoji="🏀",
+        output_filename="data-culttz.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+    ),
+    FacilityConfig(
+        facility_id="tama_sports_center",
+        facility_name="多摩スポーツセンター（体育館）",
+        notify_emoji="🏀",
+        output_filename="data-tama.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+    ),
+    FacilityConfig(
+        facility_id="asao_sports_center",
+        facility_name="麻生スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data-asao.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+    ),
+    FacilityConfig(
+        facility_id="saiwai_sports_center",
+        facility_name="幸スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data-saiwai.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+    ),
+    FacilityConfig(
+        facility_id="miyamae_sports_center",
+        facility_name="宮前スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data-miyamae.json",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+    ),
+    FacilityConfig(
+        facility_id="kawasaki_civic_plaza",
+        facility_name="川崎市民プラザ",
+        notify_emoji="🏟",
+        output_filename="data-plaza.json",
+        short_area={"体育館": "体育館"},
+    ),
+    FacilityConfig(
+        facility_id="todoroki_arena",
+        facility_name="とどろきアリーナ",
+        notify_emoji="🏟",
+        output_filename="data-todoroki.json",
+        short_area={
+            "メインアリーナ": "メイン",
+            "サブアリーナ": "サブ",
+            "体育室1": "体育室1",
+            "体育室2": "体育室2",
+        },
+    ),
+    # 等々力テニスコート：時間貸し型でふれあいネットのページ形式が別。
+    # 専用パーサ未実装のため当面スクレイプ対象外（UI/料金/タブのみ先行）。
+    FacilityConfig(
+        facility_id="todoroki_tennis",
+        facility_name="等々力テニスコート",
+        notify_emoji="🎾",
+        output_filename="data-tennis.json",
+        short_area={f"等々力テニス場{i}": str(i) for i in range(1, 11)},
+        scrape_enabled=False,
+    ),
+    # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）。専用パーサ未実装のため対象外。
+    FacilityConfig(
+        facility_id="fujimi_tennis",
+        facility_name="富士見テニスコート",
+        notify_emoji="🎾",
+        output_filename="data-fujimi.json",
+        short_area={f"富士見テニス場{i}": str(i) for i in range(1, 13)},
+        scrape_enabled=False,
+    ),
+]
 
 
 def _run_async(coro):
@@ -103,42 +202,35 @@ def _scraper_kwargs() -> dict:
 # スクレイプ（エリア単位で成否を分離して収集）
 # ──────────────────────────────────────────
 
-async def _collect_records() -> tuple[dict, bool, bool]:
-    """3エリアを順にチェック。
-    戻り値: (by_area, login_ok, maintenance)
-      by_area: { area_name: [日別レコード, ...] }（失敗エリアは [] か全unknown）
+async def _collect_records(cfg: FacilityConfig, scraper: FureaiNetScraper) -> dict:
+    """cfg の全エリアを順にチェック（ログイン済みの scraper を渡す）。
+    戻り値: by_area = { area_name: [日別レコード, ...] }（失敗エリアは [] か全unknown）
     """
-    nav = FACILITY_NAV[FACILITY_ID]
+    nav = FACILITY_NAV[cfg.facility_id]
     areas = nav["areas"]  # [{"name": ..., "index": ...}, ...]
     days_ahead = int(os.getenv("SCRAPE_DAYS_AHEAD", "30"))
     target_dates = get_target_dates(days_ahead)
 
     by_area: dict[str, list] = {}
-    async with FureaiNetScraper(**_scraper_kwargs()) as scraper:
-        # 先に明示ログインして、失敗の種別（メンテ/真の失敗）を判定できるようにする
-        login_ok = await scraper.login()
-        if not login_ok:
-            return by_area, False, scraper.maintenance
+    for area in areas:
+        def on_progress(msg, _a=area["name"]):
+            print(f"[{cfg.facility_name}/{_a}] {msg}", flush=True)
 
-        for area in areas:
-            def on_progress(msg, _a=area["name"]):
-                print(f"[{_a}] {msg}", flush=True)
-
-            try:
-                recs = await scraper.check_area_days(
-                    FACILITY_ID,
-                    area["name"],
-                    area["index"],
-                    BOOKING_TYPE,
-                    target_dates,
-                    on_progress=on_progress,
-                )
-            except Exception as e:
-                print(f"[{area['name']}] 取得エラー: {e}", flush=True)
-                recs = []
-            print(f"[{area['name']}] {len(recs)} 日取得", flush=True)
-            by_area[area["name"]] = recs
-    return by_area, True, False
+        try:
+            recs = await scraper.check_area_days(
+                cfg.facility_id,
+                area["name"],
+                area["index"],
+                BOOKING_TYPE,
+                target_dates,
+                on_progress=on_progress,
+            )
+        except Exception as e:
+            print(f"[{cfg.facility_name}/{area['name']}] 取得エラー: {e}", flush=True)
+            recs = []
+        print(f"[{cfg.facility_name}/{area['name']}] {len(recs)} 日取得", flush=True)
+        by_area[area["name"]] = recs
+    return by_area
 
 
 def _area_ok(recs: list) -> bool:
@@ -150,9 +242,9 @@ def _area_ok(recs: list) -> bool:
     return known > 0
 
 
-def _build_payload(records: list[dict]) -> dict:
+def _build_payload(cfg: FacilityConfig, records: list[dict]) -> dict:
     """日別レコードを data.json の構造へ整形"""
-    nav = FACILITY_NAV[FACILITY_ID]
+    nav = FACILITY_NAV[cfg.facility_id]
     area_names = [a["name"] for a in nav["areas"]]
 
     # date -> { area_name -> record }
@@ -185,7 +277,7 @@ def _build_payload(records: list[dict]) -> dict:
         })
 
     return {
-        "facility": FACILITY_NAME,
+        "facility": cfg.facility_name,
         "bookingType": BOOKING_TYPE,
         "reserveUrl": RESERVE_URL,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
@@ -242,10 +334,10 @@ def _clean_secret(s: str) -> str:
     return s.replace("﻿", "").strip()
 
 
-def _fetch_previous() -> dict | None:
+def _fetch_previous(cfg: FacilityConfig) -> dict | None:
     """公開中の data.json（前回結果）を取得。失敗時は None。"""
     try:
-        req = urllib.request.Request(LIVE_DATA_URL, headers={"Cache-Control": "no-cache"})
+        req = urllib.request.Request(cfg.live_data_url, headers={"Cache-Control": "no-cache"})
         with urllib.request.urlopen(req, timeout=15) as res:
             return json.loads(res.read().decode("utf-8"))
     except Exception as e:
@@ -253,7 +345,7 @@ def _fetch_previous() -> dict | None:
         return None
 
 
-def _format_keys(keys: dict) -> list:
+def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
     """{(date, area, label): weekday} を ・MM/DD(曜) エリア … 時間帯 の行リストに整形。"""
     grouped: dict[tuple, list] = {}
     wd_map: dict[str, str] = {}
@@ -265,15 +357,15 @@ def _format_keys(keys: dict) -> list:
         md = date[5:].replace("-", "/")
         labels = grouped[(date, area)]
         labels = [l for l in PERIOD_ORDER if l in labels] + [l for l in labels if l == "終日"]
-        short = SHORT_AREA.get(area, area)
+        short = cfg.short_area.get(area, area)
         out.append(f"・{md}({wd_map.get(date,'')}) {short} … {'・'.join(labels)}")
     return out
 
 
-def _build_notify_message(current: dict, added: dict, removed: dict) -> str:
+def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> str:
     """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
     変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
-    lines = [f"{NOTIFY_EMOJI} {FACILITY_NAME} 予約できる枠"]
+    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠"]
     summary = []
     if added:
         summary.append(f"新たに{len(added)}枠")
@@ -283,7 +375,7 @@ def _build_notify_message(current: dict, added: dict, removed: dict) -> str:
         lines.append("（" + " / ".join(summary) + "）")
     lines.append("")
     if current:
-        lines += _format_keys(current)
+        lines += _format_keys(cfg, current)
     else:
         lines.append("・現在、予約できる枠はありません")
     lines.append("")
@@ -291,7 +383,7 @@ def _build_notify_message(current: dict, added: dict, removed: dict) -> str:
     return "\n".join(lines)[:1900]
 
 
-def _notify_line(current: dict, added: dict, removed: dict) -> None:
+def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> None:
     """現在予約できる枠の一覧を LINE（Messaging API ブロードキャスト）で通知する。
     LINE公式アカウントを友だち追加したメンバー全員に届く。"""
     token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
@@ -299,7 +391,7 @@ def _notify_line(current: dict, added: dict, removed: dict) -> None:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
 
-    content = _build_notify_message(current, added, removed)
+    content = _build_notify_message(cfg, current, added, removed)
     grouped_count = len({(d, a) for (d, a, _l) in current})
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
@@ -365,82 +457,110 @@ def _set_output(key: str, value: str) -> None:
             pass
 
 
-def main() -> int:
-    print(f"=== 高津スポーツセンター 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
+async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool]:
+    """1回ログインして全施設を順に取得する（同一資格情報のため共有）。
+    戻り値: (results, maintenance)
+      results = { facility_id: by_area }。ログイン不可なら results=None。
+    """
+    results: dict[str, dict] = {}
+    async with FureaiNetScraper(**_scraper_kwargs()) as scraper:
+        if not await scraper.login():
+            return None, scraper.maintenance
+        for cfg in cfgs:
+            if not cfg.scrape_enabled:
+                continue
+            print(f"--- {cfg.facility_name} 取得開始 ---", flush=True)
+            results[cfg.facility_id] = await _collect_records(cfg, scraper)
+    return results, False
 
-    # 通知用に前回（公開中）データを先に取得
-    previous = _fetch_previous()
 
-    by_area, login_ok, maintenance = _run_async(_collect_records())
-    area_names = [a["name"] for a in FACILITY_NAV[FACILITY_ID]["areas"]]
-
-    # ── ログイン不可 ──────────────────────────
-    if not login_ok:
-        _set_output("deploy", "false")
-        if maintenance:
-            # メンテ時間は正常系。data.json維持・通知/デプロイなし・ジョブ成功扱い
-            print("[メンテ] ふれあいネットのログイン機能停止中。data.json は維持して終了", flush=True)
-            return 0
-        # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
-        _notify_admin("ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）")
-        return 1
-
+def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None) -> bool:
+    """1施設分の payload 構築・出力・通知を行う。デプロイ対象になったら True。"""
+    area_names = [a["name"] for a in FACILITY_NAV[cfg.facility_id]["areas"]]
     failed = [a for a in area_names if not _area_ok(by_area.get(a, []))]
     ok_areas = [a for a in area_names if a not in failed]
 
-    # ── 全エリア失敗 ──────────────────────────
-    # メンテ移行直後など。data.json は維持し、デプロイ/通知はスキップ（誤上書き防止）。
+    # 全エリア失敗（メンテ移行直後など）→ 既存ファイル維持・通知/デプロイなし
     if not ok_areas:
-        print("[警告] 全エリア取得失敗（0件/全unknown）。data.json は維持してスキップ", flush=True)
-        _notify_admin("全エリア取得失敗（メンテ移行 or サイト構造変化の可能性）")
-        _set_output("deploy", "false")
-        return 0
+        print(f"[{cfg.facility_name}][警告] 全エリア取得失敗。{cfg.output_filename} は維持してスキップ", flush=True)
+        _notify_admin(f"{cfg.facility_name}: 全エリア取得失敗（メンテ移行 or サイト構造変化の可能性）")
+        return False
 
-    # ── 成功エリアから payload を構築 ─────────────
     records = [r for a in ok_areas for r in by_area[a]]
-    payload = _build_payload(records)
+    payload = _build_payload(cfg, records)
 
-    # 失敗エリアは前回値で上書き（ユーザー表示の退行防止）し、差分通知からも除外
+    # 失敗エリアは前回値で上書き（表示の退行防止）し、差分通知からも除外
     if failed:
         _overlay_previous(payload, previous, failed)
-        print(f"[部分失敗] {failed} は前回値を保持（通知対象外）", flush=True)
-        _notify_admin(f"一部エリア取得失敗: {failed}（該当エリアは前回値を保持）")
+        print(f"[{cfg.facility_name}][部分失敗] {failed} は前回値を保持（通知対象外）", flush=True)
+        _notify_admin(f"{cfg.facility_name}: 一部エリア取得失敗 {failed}（該当エリアは前回値を保持）")
 
     n_days = len(payload["days"])
     if n_days == 0:
-        print("[警告] 取得0日。data.json は更新せずスキップ", flush=True)
-        _set_output("deploy", "false")
-        return 0
+        print(f"[{cfg.facility_name}][警告] 取得0日。{cfg.output_filename} は更新せずスキップ", flush=True)
+        return False
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    _set_output("deploy", "true")
+    cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg.output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     n_reservable = sum(
         1
         for d in payload["days"]
         if any(a["status"] in RESERVABLE for a in d["byArea"].values())
     )
-    print(f"=== 完了: {n_days}日 × {len(payload['areas'])}エリア / 予約可能{n_reservable}日 ===", flush=True)
-    print(f"出力: {OUTPUT_PATH}", flush=True)
+    print(
+        f"=== {cfg.facility_name} 完了: {n_days}日 × {len(payload['areas'])}エリア / "
+        f"予約可能{n_reservable}日 → {cfg.output_path} ===",
+        flush=True,
+    )
 
     # ── 差分通知（取得に成功したエリアのみを母集合にする）──
     new_now = _reservable_keys(payload, only_areas=ok_areas)
     if previous is None:
-        print("[通知] 前回データなしのため初回は通知しません", flush=True)
+        print(f"[{cfg.facility_name}][通知] 前回データなしのため初回は通知しません", flush=True)
     else:
         old = _reservable_keys(previous, only_areas=ok_areas)
         added = {k: v for k, v in new_now.items() if k not in old}
         removed = {k: v for k, v in old.items() if k not in new_now}
         if added or removed:
             print(
-                f"[通知] 変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
+                f"[{cfg.facility_name}][通知] 変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
                 f"現在の予約可能枠{len(new_now)}件を通知",
                 flush=True,
             )
-            _notify_line(new_now, added, removed)
+            _notify_line(cfg, new_now, added, removed)
         else:
-            print("[通知] 変化なし", flush=True)
+            print(f"[{cfg.facility_name}][通知] 変化なし", flush=True)
+    return True
+
+
+def main() -> int:
+    print(f"=== ふれあいネット 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
+
+    targets = [cfg for cfg in FACILITIES if cfg.scrape_enabled]
+
+    # 通知用に前回（公開中）データを施設ごとに先取得
+    previous_map = {cfg.facility_id: _fetch_previous(cfg) for cfg in targets}
+
+    collected, maintenance = _run_async(_collect_all(targets))
+
+    # ── ログイン不可（全施設共通）──────────────
+    if collected is None:
+        _set_output("deploy", "false")
+        if maintenance:
+            # メンテ時間は正常系。各 data.json 維持・通知/デプロイなし・ジョブ成功扱い
+            print("[メンテ] ふれあいネットのログイン機能停止中。各 data.json は維持して終了", flush=True)
+            return 0
+        # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
+        _notify_admin("ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）")
+        return 1
+
+    any_deploy = False
+    for cfg in targets:
+        if _process_facility(cfg, collected.get(cfg.facility_id, {}), previous_map[cfg.facility_id]):
+            any_deploy = True
+
+    _set_output("deploy", "true" if any_deploy else "false")
     return 0
 
 

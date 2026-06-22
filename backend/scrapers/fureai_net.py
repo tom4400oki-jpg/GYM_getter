@@ -28,26 +28,104 @@ FACILITY_NAV = {
             {"name": "小体育室",       "index": 2},
         ],
     },
+    "culttz_kawasaki": {
+        "region": "川崎区",
+        "building": "カルッツかわさき",
+        "has_lottery": True,
+        # 高津と同じ時間帯貸し形式。大体育室半面Ａ/Ｂ・小体育室。
+        # ふれあいネットの表記が「大体育室（半面Ａ）」等の場合は名前一致が外れ index 代替になる。
+        "areas": [
+            {"name": "大体育室半面Ａ", "index": 0},
+            {"name": "大体育室半面Ｂ", "index": 1},
+            {"name": "小体育室",       "index": 2},
+        ],
+    },
+    "asao_sports_center": {
+        "region": "麻生区",
+        "building": "麻生スポーツセンター",
+        "has_lottery": True,
+        # 高津と同じ時間帯貸し形式・同額料金。大体育室半面Ａ/Ｂ（小体育室は料金未確認のため対象外）。
+        "areas": [
+            {"name": "大体育室半面Ａ", "index": 0},
+            {"name": "大体育室半面Ｂ", "index": 1},
+        ],
+    },
+    "saiwai_sports_center": {
+        "region": "幸区",
+        "building": "幸スポーツセンター",
+        "has_lottery": True,
+        # 高津と同じ時間帯貸し形式・同額料金。大体育室半面Ａ/Ｂ・小体育室。
+        "areas": [
+            {"name": "大体育室半面Ａ", "index": 0},
+            {"name": "大体育室半面Ｂ", "index": 1},
+            {"name": "小体育室",       "index": 2},
+        ],
+    },
+    "miyamae_sports_center": {
+        "region": "宮前区",
+        "building": "宮前スポーツセンター",
+        "has_lottery": True,
+        # 高津と同じ時間帯貸し形式。大体育室のみ（半面Ａ/Ｂ）。
+        # 名前一致で拾えなければ index 代替。初回実行で取得失敗なら name/index 調整。
+        "areas": [
+            {"name": "大体育室半面Ａ", "index": 0},
+            {"name": "大体育室半面Ｂ", "index": 1},
+        ],
+    },
+    "kawasaki_civic_plaza": {
+        "region": "高津区",
+        "building": "川崎市民プラザ",
+        "has_lottery": True,
+        # 体育館は単一スペース貸切。施設選択画面のリンク文字列に依存するため、
+        # 名前一致で拾えなければ index で代替する（_navigate_to_monthly_calendar 参照）。
+        # 初回の本番実行でエリア取得失敗の管理者通知が出たら name/index を調整する。
+        "areas": [
+            {"name": "体育館", "index": 0},
+        ],
+    },
+    "todoroki_arena": {
+        "region": "中原区",
+        "building": "とどろきアリーナ",
+        "has_lottery": True,
+        # 名前一致で拾えなければ index で代替（_navigate_to_monthly_calendar 参照）。
+        # 初回の本番実行で取得失敗の管理者通知が出たら name/index を実際のリンク文字列に調整。
+        "areas": [
+            {"name": "メインアリーナ", "index": 0},
+            {"name": "サブアリーナ",   "index": 1},
+            {"name": "体育室1",        "index": 2},
+            {"name": "体育室2",        "index": 3},
+        ],
+    },
     "todoroki_tennis": {
         "region": "中原区",
         "building": "等々力テニスコート",
         "has_lottery": True,
-        "areas": [],  # 実行時に自動発見
+        # 時間貸し型（開始時刻スロット）。既存の時間帯貸しパーサとは別実装が必要なため、
+        # スクレイパーは未対応（scrape_takatsu.py 側で scrape_enabled=False）。
+        # 実ページの HTML を確認してから専用パーサ＋ナビを実装する。
+        "areas": [
+            {"name": f"等々力テニス場{i}", "index": i - 1} for i in range(1, 11)
+        ],
+    },
+    "fujimi_tennis": {
+        "region": "川崎区",
+        "building": "富士見テニスコート",
+        "has_lottery": True,
+        # 時間貸し型（6スロット）。専用パーサ未実装のため scrape_takatsu.py で scrape_enabled=False。
+        "areas": [
+            {"name": f"富士見テニス場{i}", "index": i - 1} for i in range(1, 13)
+        ],
     },
     "tama_sports_center": {
         "region": "多摩区",
         "building": "川崎市多摩スポーツセンター",
         "has_lottery": True,
+        # 体育館（時間帯貸し）のみを対象。大体育室半面Ａ/Ｂ（高津と同形式・同額）。
+        # ※テニス場Ａ/Ｂ は時間貸し型で別パーサが必要なため当面対象外
+        #   （等々力テニスのパーサ実装とまとめて対応）。index は施設一覧の出現順（テニスが先頭=0,1）。
         "areas": [
-            {"name": "テニス場Ａ",          "index": 0},
-            {"name": "テニス場Ｂ",          "index": 1},
-            {"name": "大体育室半面Ａ",      "index": 2},
-            {"name": "大体育室半面Ｂ",      "index": 3},
-            {"name": "小体育室",            "index": 4},
-            {"name": "第１武道室",          "index": 5},
-            {"name": "第２武道室",          "index": 6},
-            {"name": "第１・２武道室合併",  "index": 7},
-            {"name": "研修室",              "index": 8},
+            {"name": "大体育室半面Ａ", "index": 2},
+            {"name": "大体育室半面Ｂ", "index": 3},
         ],
     },
 }

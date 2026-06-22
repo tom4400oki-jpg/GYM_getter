@@ -1,0 +1,16 @@
+{
+  "facility": "川崎市民プラザ",
+  "bookingType": "reservation",
+  "reserveUrl": "https://www.fureai-net.city.kawasaki.jp/web/",
+  "updatedAt": "2026-06-03T00:00:00+00:00",
+  "areas": [
+    "体育館"
+  ],
+  "periodOrder": [
+    "午前",
+    "午後1",
+    "午後2",
+    "夜間"
+  ],
+  "days": []
+}
