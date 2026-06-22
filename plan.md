@@ -10,7 +10,7 @@
 GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
   ├─ scripts/scrape_takatsu.py  (Playwright, FureaiNetScraper.check_area_days を利用 / 3エリア)
   │     ├─ web/public/data.json を生成
-  │     └─ 公開中 data.json と差分を取り「新しく空いた枠だけ」LINE通知（Messaging API ブロードキャスト）
+  │     └─ 公開中 data.json と差分を取り、空き/埋まりの変化時に「現在の全空き枠を日付順」でLINE通知（Messaging API ブロードキャスト）
   └─ web を build → Firebase Hosting (live) へデプロイ
                           │
                           ▼
@@ -21,7 +21,7 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
 - 保存 = 静的 `data.json`（DBなし）
 - 対象 = 高津スポーツセンターのみ / `reservation`（予約）/ 3エリア（大体育室半面Ａ・Ｂ・小体育室）
 - 表示 = 日×エリアの空き○/一部△/予約あり×、空きの日は時間帯（午前/午後1/午後2/夜間）まで展開。
-- 通知 = `LINE_CHANNEL_ACCESS_TOKEN`（GitHub Secrets）。前回比で**新しく予約可能になった枠のみ**通知。
+- 通知 = `LINE_CHANNEL_ACCESS_TOKEN`（GitHub Secrets）。前回比で**空き枠が増えた／埋まった変化があった時のみ**通知し、本文には**現在予約できる全枠を日付順**に列挙（先頭に「新たに○枠/埋まり○枠」サマリ）。変化なしの実行では送信しない。
 - メンテ時間等で取得0件のときは `data.json` を上書きせず deploy/通知をスキップ（ライブ保持）。
 
 ## 主要ファイル
@@ -102,4 +102,5 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
   - Phase 3: 予約導線ボタン／鮮度バッジ／PWA化。
   - Phase 2: スクレイプ設定の集約・通知見出しの設定参照化・施設追加手順の明文化。
   - 残課題（push後）: GitHub Actions で `workflow_dispatch` 実行し、実データ更新＋デプロイ＋異常時通知を確認。
+- 2026-06-22: LINE通知を「新着差分だけ」→「変化（空き増/埋まり）時に現在の全空き枠を日付順で通知」に変更。埋まった時も通知が飛ぶように。
     任意で Secret `LINE_ADMIN_USER_ID` を登録すると管理者へ LINE push 通知が届く。

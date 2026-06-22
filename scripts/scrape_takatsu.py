@@ -270,25 +270,37 @@ def _format_keys(keys: dict) -> list:
     return out
 
 
-def _build_notify_message(added: dict) -> str:
-    """新しく予約できるようになった枠だけを通知メッセージに整形する。"""
-    lines = [f"{NOTIFY_EMOJI} {FACILITY_NAME} 新着の空き"]
-    lines += _format_keys(added)
+def _build_notify_message(current: dict, added: dict, removed: dict) -> str:
+    """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
+    変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
+    lines = [f"{NOTIFY_EMOJI} {FACILITY_NAME} 予約できる枠"]
+    summary = []
+    if added:
+        summary.append(f"新たに{len(added)}枠")
+    if removed:
+        summary.append(f"埋まり{len(removed)}枠")
+    if summary:
+        lines.append("（" + " / ".join(summary) + "）")
+    lines.append("")
+    if current:
+        lines += _format_keys(current)
+    else:
+        lines.append("・現在、予約できる枠はありません")
     lines.append("")
     lines.append(f"▶ {APP_URL}")
     return "\n".join(lines)[:1900]
 
 
-def _notify_line(added: dict) -> None:
-    """新しく予約できるようになった枠を LINE（Messaging API ブロードキャスト）で通知する。
+def _notify_line(current: dict, added: dict, removed: dict) -> None:
+    """現在予約できる枠の一覧を LINE（Messaging API ブロードキャスト）で通知する。
     LINE公式アカウントを友だち追加したメンバー全員に届く。"""
     token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
     if not token:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
         return
 
-    content = _build_notify_message(added)
-    grouped_count = len({(d, a) for (d, a, _l) in added})
+    content = _build_notify_message(current, added, removed)
+    grouped_count = len({(d, a) for (d, a, _l) in current})
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
@@ -419,11 +431,16 @@ def main() -> int:
     else:
         old = _reservable_keys(previous, only_areas=ok_areas)
         added = {k: v for k, v in new_now.items() if k not in old}
-        if added:
-            print(f"[通知] 新着の予約可能枠 {len(added)}件", flush=True)
-            _notify_line(added)
+        removed = {k: v for k, v in old.items() if k not in new_now}
+        if added or removed:
+            print(
+                f"[通知] 変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
+                f"現在の予約可能枠{len(new_now)}件を通知",
+                flush=True,
+            )
+            _notify_line(new_now, added, removed)
         else:
-            print("[通知] 新着なし", flush=True)
+            print("[通知] 変化なし", flush=True)
     return 0
 
 
