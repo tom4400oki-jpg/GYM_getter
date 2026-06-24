@@ -1,0 +1,12 @@
+{
+  "facility": "多摩スポーツセンター（テニス）",
+  "bookingType": "reservation",
+  "reserveUrl": "https://www.fureai-net.city.kawasaki.jp/web/",
+  "updatedAt": "2026-06-03T00:00:00+00:00",
+  "areas": [
+    "テニス場Ａ",
+    "テニス場Ｂ"
+  ],
+  "periodOrder": ["9:00", "12:00", "14:00", "16:00", "18:30"],
+  "days": []
+}

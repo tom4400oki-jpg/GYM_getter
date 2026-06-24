@@ -107,6 +107,16 @@ FACILITY_NAV = {
             {"name": f"等々力テニス場{i}", "index": i - 1} for i in range(1, 11)
         ],
     },
+    "tama_tennis": {
+        "region": "多摩区",
+        "building": "川崎市多摩スポーツセンター",
+        "has_lottery": True,
+        # 多摩スポーツセンター内のテニス場（時間貸し型・2面）。同建物の体育館は tama_sports_center。
+        "areas": [
+            {"name": "テニス場Ａ", "index": 0},
+            {"name": "テニス場Ｂ", "index": 1},
+        ],
+    },
     "marien_tennis": {
         "region": "川崎区",
         "building": "川崎マリエンテニスコート",

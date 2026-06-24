@@ -171,6 +171,16 @@ FACILITIES: list[FacilityConfig] = [
         period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
         group="tennis",
     ),
+    # 多摩スポーツセンター テニス場（時間貸し型・2面）
+    FacilityConfig(
+        facility_id="tama_tennis",
+        facility_name="多摩スポーツセンター（テニス）",
+        notify_emoji="🎾",
+        output_filename="data-tama-tennis.json",
+        short_area={"テニス場Ａ": "Ａ", "テニス場Ｂ": "Ｂ"},
+        period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
+        group="tennis",
+    ),
     # 川崎マリエンテニスコート：時間貸し型（5スロット・12面）
     FacilityConfig(
         facility_id="marien_tennis",
