@@ -107,6 +107,15 @@ FACILITY_NAV = {
             {"name": f"等々力テニス場{i}", "index": i - 1} for i in range(1, 11)
         ],
     },
+    "daishi_tennis": {
+        "region": "川崎区",
+        "building": "大師テニスコート",
+        "has_lottery": True,
+        # 時間貸し型（4スロット・3面）。調査で確認済み。
+        "areas": [
+            {"name": f"大師テニス場{i}", "index": i - 1} for i in range(1, 4)
+        ],
+    },
     "fujimi_tennis": {
         "region": "川崎区",
         "building": "富士見テニスコート",

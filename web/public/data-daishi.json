@@ -1,0 +1,13 @@
+{
+  "facility": "大師テニスコート",
+  "bookingType": "reservation",
+  "reserveUrl": "https://www.fureai-net.city.kawasaki.jp/web/",
+  "updatedAt": "2026-06-03T00:00:00+00:00",
+  "areas": [
+    "大師テニス場1",
+    "大師テニス場2",
+    "大師テニス場3"
+  ],
+  "periodOrder": ["9:00", "12:00", "14:00", "16:00"],
+  "days": []
+}

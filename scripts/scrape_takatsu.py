@@ -171,6 +171,16 @@ FACILITIES: list[FacilityConfig] = [
         period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
         group="tennis",
     ),
+    # 大師テニスコート：時間貸し型（4スロット・3面・フラット料金）
+    FacilityConfig(
+        facility_id="daishi_tennis",
+        facility_name="大師テニスコート",
+        notify_emoji="🎾",
+        output_filename="data-daishi.json",
+        short_area={f"大師テニス場{i}": str(i) for i in range(1, 4)},
+        period_order=["9:00", "12:00", "14:00", "16:00"],
+        group="tennis",
+    ),
     # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）
     FacilityConfig(
         facility_id="fujimi_tennis",

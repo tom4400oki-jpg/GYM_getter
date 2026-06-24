@@ -62,6 +62,13 @@ const PERIOD_TIMES_BY_FACILITY: Record<string, Record<string, string>> = {
     "17:00": "17:00〜18:30",
     "18:30": "18:30〜20:30",
   },
+  // 大師テニス（4枠・各2時間）
+  daishi: {
+    "9:00": "9:00〜11:00",
+    "12:00": "12:00〜14:00",
+    "14:00": "14:00〜16:00",
+    "16:00": "16:00〜18:00",
+  },
 };
 
 /** 施設×時間帯ラベルから利用時刻文字列を返す。 */
@@ -133,6 +140,16 @@ const PRICES: Record<string, FacilityPrice> = {
       体育館: {
         weekday: { 午前: 5700, 夜間: 6500 },
         holiday: { 午前: 6800, 午後1: 6200, 午後2: 6200, 夜間: 7800 },
+      },
+    },
+  },
+  // 大師テニスコート：市区内・2時間1,520円のフラット（全スロット同額）
+  daishi: {
+    match: () => "コート",
+    sets: {
+      コート: {
+        weekday: { "9:00": 1520, "12:00": 1520, "14:00": 1520, "16:00": 1520 },
+        holiday: { "9:00": 1520, "12:00": 1520, "14:00": 1520, "16:00": 1520 },
       },
     },
   },
@@ -213,6 +230,7 @@ const FACILITIES = [
   { id: "todoroki", name: "とどろきアリーナ", short: "とどろき", file: "data-todoroki.json", cat: "hall" },
   { id: "tennis", name: "等々力テニスコート", short: "等々力", file: "data-tennis.json", cat: "tennis" },
   { id: "fujimi", name: "富士見テニスコート", short: "富士見", file: "data-fujimi.json", cat: "tennis" },
+  { id: "daishi", name: "大師テニスコート", short: "大師", file: "data-daishi.json", cat: "tennis" },
 ] as const;
 type FacilityId = (typeof FACILITIES)[number]["id"];
 type Category = (typeof FACILITIES)[number]["cat"];
@@ -231,7 +249,8 @@ function shortArea(name: string): string {
     .replace("サブアリーナ", "サブ")
     .replace("体育室", "体育")
     .replace("等々力テニス場", "")
-    .replace("富士見テニス場", "");
+    .replace("富士見テニス場", "")
+    .replace("大師テニス場", "");
 }
 
 function dayHasReservable(day: DayData): boolean {
@@ -321,7 +340,7 @@ export default function App() {
 
   // テニス系は「コート=行 × スロット=列」の転置レイアウト。コート数が多いため
   // 一覧の列にはせず、日別行は空き枠数のサマリ、展開時に転置グリッドを出す。
-  const isTennis = facilityId === "tennis" || facilityId === "fujimi";
+  const isTennis = ["tennis", "fujimi", "daishi"].includes(facilityId);
   const listCols = isTennis
     ? "3.2rem 1fr"
     : `3.2rem repeat(${Math.max(areas.length, 1)}, minmax(0,1fr))`;
