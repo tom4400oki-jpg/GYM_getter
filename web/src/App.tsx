@@ -69,6 +69,14 @@ const PERIOD_TIMES_BY_FACILITY: Record<string, Record<string, string>> = {
     "14:00": "14:00〜16:00",
     "16:00": "16:00〜18:00",
   },
+  // 川崎マリエンテニス（5枠）
+  marien: {
+    "9:00": "9:00〜12:00",
+    "12:00": "12:00〜14:00",
+    "14:00": "14:00〜16:00",
+    "16:00": "16:00〜18:00",
+    "18:30": "18:30〜20:30",
+  },
 };
 
 /** 施設×時間帯ラベルから利用時刻文字列を返す。 */
@@ -140,6 +148,16 @@ const PRICES: Record<string, FacilityPrice> = {
       体育館: {
         weekday: { 午前: 5700, 夜間: 6500 },
         holiday: { 午前: 6800, 午後1: 6200, 午後2: 6200, 夜間: 7800 },
+      },
+    },
+  },
+  // 川崎マリエンテニスコート：9:00枠(3時間)1,830円、他(2時間)各1,220円。照明は別途。
+  marien: {
+    match: () => "コート",
+    sets: {
+      コート: {
+        weekday: { "9:00": 1830, "12:00": 1220, "14:00": 1220, "16:00": 1220, "18:30": 1220 },
+        holiday: { "9:00": 1830, "12:00": 1220, "14:00": 1220, "16:00": 1220, "18:30": 1220 },
       },
     },
   },
@@ -231,6 +249,7 @@ const FACILITIES = [
   { id: "tennis", name: "等々力テニスコート", short: "等々力", file: "data-tennis.json", cat: "tennis" },
   { id: "fujimi", name: "富士見テニスコート", short: "富士見", file: "data-fujimi.json", cat: "tennis" },
   { id: "daishi", name: "大師テニスコート", short: "大師", file: "data-daishi.json", cat: "tennis" },
+  { id: "marien", name: "川崎マリエンテニスコート", short: "マリエン", file: "data-marien.json", cat: "tennis" },
 ] as const;
 type FacilityId = (typeof FACILITIES)[number]["id"];
 type Category = (typeof FACILITIES)[number]["cat"];
@@ -250,7 +269,8 @@ function shortArea(name: string): string {
     .replace("体育室", "体育")
     .replace("等々力テニス場", "")
     .replace("富士見テニス場", "")
-    .replace("大師テニス場", "");
+    .replace("大師テニス場", "")
+    .replace("テニスコート", "");
 }
 
 function dayHasReservable(day: DayData): boolean {
@@ -340,7 +360,7 @@ export default function App() {
 
   // テニス系は「コート=行 × スロット=列」の転置レイアウト。コート数が多いため
   // 一覧の列にはせず、日別行は空き枠数のサマリ、展開時に転置グリッドを出す。
-  const isTennis = ["tennis", "fujimi", "daishi"].includes(facilityId);
+  const isTennis = ["tennis", "fujimi", "daishi", "marien"].includes(facilityId);
   const listCols = isTennis
     ? "3.2rem 1fr"
     : `3.2rem repeat(${Math.max(areas.length, 1)}, minmax(0,1fr))`;

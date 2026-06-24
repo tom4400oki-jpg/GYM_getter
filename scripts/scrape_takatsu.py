@@ -171,6 +171,16 @@ FACILITIES: list[FacilityConfig] = [
         period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
         group="tennis",
     ),
+    # 川崎マリエンテニスコート：時間貸し型（5スロット・12面）
+    FacilityConfig(
+        facility_id="marien_tennis",
+        facility_name="川崎マリエンテニスコート",
+        notify_emoji="🎾",
+        output_filename="data-marien.json",
+        short_area={f"テニスコート{i}": str(i) for i in range(1, 13)},
+        period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
+        group="tennis",
+    ),
     # 大師テニスコート：時間貸し型（4スロット・3面・フラット料金）
     FacilityConfig(
         facility_id="daishi_tennis",
