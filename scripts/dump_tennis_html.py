@@ -36,9 +36,7 @@ OUT_DIR = ROOT / "tennis_html"
 
 # 調査対象（region / building は FACILITY_NAV と同じ表記）
 TARGETS = [
-    {"key": "todoroki", "region": "中原区", "building": "等々力テニスコート"},
-    {"key": "fujimi",   "region": "川崎区", "building": "富士見テニスコート"},
-    {"key": "tama",     "region": "多摩区", "building": "川崎市多摩スポーツセンター"},
+    {"key": "daishi", "region": "川崎区", "building": "大師テニスコート"},
 ]
 
 
