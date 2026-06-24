@@ -133,6 +133,13 @@ FACILITY_NAV = {
 # 全角数字→半角（午後１→午後1）
 _PERIOD_TRANS = str.maketrans("０１２３４５６７８９", "0123456789")
 
+# テニス（時間貸し）の開始時刻4桁 → アプリのスロットラベル
+_TENNIS_SLOT_MAP = {
+    "0900": "9:00", "1100": "11:00", "1200": "12:00", "1300": "13:00",
+    "1400": "14:00", "1500": "15:00", "1600": "16:00", "1700": "17:00",
+    "1830": "18:30",
+}
+
 
 def map_status(alt: str) -> str:
     """img の alt 文字列からステータスを判定（部分一致）。
@@ -338,8 +345,9 @@ class FureaiNetScraper(BaseScraper):
                 self._log(f"名前 '{area_name}' が見つからないため位置 {area_pos} で代替")
                 async with self.page.expect_navigation(wait_until="networkidle"):
                     await self.page.evaluate(
+                        # 先頭の「すべて」リンクは除外（テニス等で index が1つずれるのを防ぐ）。
                         "idx => { const ls = [...document.querySelectorAll('a')]"
-                        ".filter(a => a.href.includes('sendInstNo'));"
+                        ".filter(a => a.href.includes('sendInstNo') && !a.textContent.includes('すべて'));"
                         " if(ls[idx]) ls[idx].click();"
                         " else throw new Error('Area index out of range: '+idx); }",
                         area_pos,
@@ -461,6 +469,30 @@ class FureaiNetScraper(BaseScraper):
                 out.setdefault(date_str, {})[period] = map_status(alt)
         return out
 
+    async def _extract_tennis_slots(self, base_year: int, base_month: int) -> dict:
+        """テニス（時間貸し）の施設空き状況ページから { 'YYYY-MM-DD': {slot: status} } を抽出する。
+        体育館の週表と違い、img alt に日付・時刻・状態がすべて入る。
+        alt 例: '6月25日木曜日０９００予約あり'（時刻=全角4桁）。週単位で複数日分を返す。"""
+        alts = await self.page.evaluate(
+            "() => [...document.querySelectorAll('img')].map(i => i.alt).filter(Boolean)"
+        )
+        out: dict = {}
+        for alt in alts:
+            a = alt.translate(_PERIOD_TRANS)  # 全角数字→半角
+            m = re.match(r"(\d+)月(\d+)日.*?(\d{4})(.+)$", a)
+            if not m:
+                continue
+            mo, da, slot4, status_txt = (
+                int(m.group(1)), int(m.group(2)), m.group(3), m.group(4)
+            )
+            slot = _TENNIS_SLOT_MAP.get(slot4)
+            if not slot:
+                continue
+            yr = base_year + 1 if mo < base_month else base_year
+            date_str = f"{yr}-{mo:02d}-{da:02d}"
+            out.setdefault(date_str, {})[slot] = map_status(status_txt)
+        return out
+
     async def check_area_days(
         self,
         facility_id: str,
@@ -519,7 +551,10 @@ class FureaiNetScraper(BaseScraper):
                 dd = cur["days"].get(day)
                 if dd and dd["clickable"] and dd["status"] in ("available", "partial"):
                     if await self._click_day(month, int(day)):
+                        # 体育館（午前/午後…）として抽出を試み、空ならテニス（時間スロット）として抽出
                         week = await self._extract_day_periods(year, month)
+                        if not week:
+                            week = await self._extract_tennis_slots(year, month)
                         period_cache.update(week)
                         if on_progress:
                             on_progress(f"{area_name} {date_str} 時間帯取得")

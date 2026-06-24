@@ -83,6 +83,8 @@ class FacilityConfig:
     output_filename: str      # web/public/ 配下の出力ファイル名
     short_area: dict = field(default_factory=dict)  # 通知用の短縮エリア名
     scrape_enabled: bool = True  # False ならスクレイプ対象外（UI/料金のみ先行追加した施設）
+    # data.json の periodOrder。体育館は午前/午後…、テニスは開始時刻スロット。
+    period_order: list = field(default_factory=lambda: list(PERIOD_ORDER))
 
     @property
     def output_path(self) -> Path:
@@ -163,16 +165,16 @@ FACILITIES: list[FacilityConfig] = [
         notify_emoji="🎾",
         output_filename="data-tennis.json",
         short_area={f"等々力テニス場{i}": str(i) for i in range(1, 11)},
-        scrape_enabled=False,
+        period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
     ),
-    # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）。専用パーサ未実装のため対象外。
+    # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）
     FacilityConfig(
         facility_id="fujimi_tennis",
         facility_name="富士見テニスコート",
         notify_emoji="🎾",
         output_filename="data-fujimi.json",
         short_area={f"富士見テニス場{i}": str(i) for i in range(1, 13)},
-        scrape_enabled=False,
+        period_order=["9:00", "11:00", "13:00", "15:00", "17:00", "18:30"],
     ),
 ]
 
@@ -282,7 +284,7 @@ def _build_payload(cfg: FacilityConfig, records: list[dict]) -> dict:
         "reserveUrl": RESERVE_URL,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
         "areas": area_names,
-        "periodOrder": PERIOD_ORDER,
+        "periodOrder": cfg.period_order,
         "days": days,
     }
 
@@ -356,7 +358,8 @@ def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
     for (date, area) in sorted(grouped.keys()):
         md = date[5:].replace("-", "/")
         labels = grouped[(date, area)]
-        labels = [l for l in PERIOD_ORDER if l in labels] + [l for l in labels if l == "終日"]
+        ordered = [l for l in cfg.period_order if l in labels]
+        labels = ordered + [l for l in labels if l == "終日" and l not in ordered]
         short = cfg.short_area.get(area, area)
         out.append(f"・{md}({wd_map.get(date,'')}) {short} … {'・'.join(labels)}")
     return out
@@ -516,8 +519,10 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
 
     # ── 差分通知（取得に成功したエリアのみを母集合にする）──
     new_now = _reservable_keys(payload, only_areas=ok_areas)
-    if previous is None:
-        print(f"[{cfg.facility_name}][通知] 前回データなしのため初回は通知しません", flush=True)
+    if previous is None or not previous.get("days"):
+        # 前回が無い or 空（プレースホルダ）の場合は初回扱い。
+        # 有効化直後に全枠が「新着」として大量通知されるのを防ぐ。
+        print(f"[{cfg.facility_name}][通知] 前回データなし/空のため初回は通知しません", flush=True)
     else:
         old = _reservable_keys(previous, only_areas=ok_areas)
         added = {k: v for k, v in new_now.items() if k not in old}
