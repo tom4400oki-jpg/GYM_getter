@@ -6,8 +6,9 @@ name: テニス空き確認・自動デプロイ（等々力／富士見）
 
 on:
   schedule:
-    # 1日1回（UTC 20:00 = JST 翌5:00。利用の少ない時間帯）。
-    - cron: "0 20 * * *"
+    # 1日2回：JST 9:00 と 21:00（UTC 0:00 / 12:00）。
+    - cron: "0 0 * * *"
+    - cron: "0 12 * * *"
   workflow_dispatch: {}
 
 permissions:
