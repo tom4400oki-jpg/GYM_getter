@@ -132,22 +132,55 @@ async def dump_all() -> int:
             await _safe(scraper._click_link_text(t["building"]), f"{key}:building")
             await _dump(page, f"{key}_4_after_building")
 
-            # 館選択後のページから、施設(コート)/日付らしきリンクを1つ辿ってさらにダンプ
-            try:
-                href = await page.evaluate(r"""() => {
-                    const a = [...document.querySelectorAll('a')].find(a =>
-                        /sendInstNo|selectDay|テニス|コート|次へ|表示/.test(
-                            (a.textContent||'') + (a.getAttribute('href')||'')));
-                    return a ? (a.textContent||'').trim() : null;
-                }""")
-            except Exception:
-                href = None
-            if href:
-                print(f"[drill] '{href}' を辿ってみる", flush=True)
-                ok = await _safe(scraper._click_link_text(href), f"{key}:drill")
-                if ok:
-                    await _dump(page, f"{key}_5_drill")
+            # コート(index 0)の sendInstNo を押して 1ヶ月カレンダーへ
+            ok = await _safe(
+                _click_sendinstno(page, 0), f"{key}:court0"
+            )
+            if not ok:
+                continue
+            await _dump(page, f"{key}_5_month")
+
+            # 月送りで「空き(selectDay)がある月」を最大3ヶ月先まで探し、最初の空き日をクリック
+            clicked = False
+            for _ in range(4):
+                day_clicked = await _safe(
+                    _click_first_selectday(page), f"{key}:selectDay"
+                )
+                if day_clicked:
+                    clicked = True
+                    break
+                # この月に空き日が無ければ次の月へ
+                await _safe(scraper._click_button("次の月"), f"{key}:次の月")
+            if clicked:
+                await _dump(page, f"{key}_6_slots")  # ← 時間スロット画面（本命）
         return 0
+
+
+async def _click_sendinstno(page, index: int) -> None:
+    """施設選択画面で index 番目の sendInstNo リンク（コート）をクリックして遷移。"""
+    async with page.expect_navigation(wait_until="networkidle"):
+        await page.evaluate(
+            """idx => {
+                const ls = [...document.querySelectorAll('a')]
+                    .filter(a => /sendInstNo/.test(a.getAttribute('href') || ''));
+                // 先頭は「すべて」なので index+1 を選ぶ（無ければ idx）
+                const a = ls[idx + 1] || ls[idx];
+                if (a) a.click(); else throw new Error('sendInstNo link not found: ' + idx);
+            }""",
+            index,
+        )
+
+
+async def _click_first_selectday(page) -> None:
+    """月カレンダーで最初の selectDay（空き日）リンクをクリックして時間スロット画面へ。"""
+    async with page.expect_navigation(wait_until="networkidle"):
+        await page.evaluate(
+            """() => {
+                const a = [...document.querySelectorAll('a')]
+                    .find(a => /selectDay/.test(a.getAttribute('href') || ''));
+                if (a) a.click(); else throw new Error('no selectDay link in this month');
+            }"""
+        )
 
 
 if __name__ == "__main__":
