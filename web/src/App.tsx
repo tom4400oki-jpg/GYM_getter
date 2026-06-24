@@ -257,6 +257,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [onlyReservable, setOnlyReservable] = useState(true);
+  const [onlyWeekend, setOnlyWeekend] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   async function load(fid: FacilityId = facilityId) {
@@ -284,8 +285,11 @@ export default function App() {
 
   const days = useMemo(() => {
     if (!data) return [];
-    return onlyReservable ? data.days.filter(dayHasReservable) : data.days;
-  }, [data, onlyReservable]);
+    let ds = data.days;
+    if (onlyReservable) ds = ds.filter(dayHasReservable);
+    if (onlyWeekend) ds = ds.filter((d) => d.weekday === "土" || d.weekday === "日");
+    return ds;
+  }, [data, onlyReservable, onlyWeekend]);
 
   const reservableCount = useMemo(
     () => (data ? data.days.filter(dayHasReservable).length : 0),
@@ -413,10 +417,16 @@ export default function App() {
             </button>
           ))}
         </div>
-        <label className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-600">
-          <Switch checked={onlyReservable} onCheckedChange={setOnlyReservable} />
-          予約できる日だけ表示
-        </label>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <label className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <Switch checked={onlyReservable} onCheckedChange={setOnlyReservable} />
+            予約できる日だけ表示
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <Switch checked={onlyWeekend} onCheckedChange={setOnlyWeekend} />
+            土日だけ表示
+          </label>
+        </div>
       </header>
 
       {/* 凡例 */}
