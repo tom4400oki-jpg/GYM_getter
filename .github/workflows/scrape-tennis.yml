@@ -30,6 +30,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Playwright ブラウザのキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}
+
       - name: Python 依存インストール
         run: |
           pip install -r requirements-scrape.txt
