@@ -1,0 +1,73 @@
+name: テニス空き確認・自動デプロイ（等々力／富士見）
+
+# テニスはコート数が多く（等々力10面＋富士見12面）取得に時間がかかるため、
+# 体育館とは分離して1日1回だけ実行する。体育館側のライブデータは scrape_takatsu.py が
+# 公開中JSONを書き戻して保持するので、デプロイで体育館データが退行することはない。
+
+on:
+  schedule:
+    # 1日1回（UTC 20:00 = JST 翌5:00。利用の少ない時間帯）。
+    - cron: "0 20 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  # 体育館ワークフローと同じグループにして同時デプロイを避ける
+  group: scrape-deploy
+  cancel-in-progress: false
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python 依存インストール
+        run: |
+          pip install -r requirements-scrape.txt
+          python -m playwright install --with-deps chromium
+
+      - name: テニス空き状況スクレイプ
+        id: scrape
+        env:
+          FUREAI_USER_ID: ${{ secrets.FUREAI_USER_ID }}
+          FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
+          FUREAI_SECURITY_NUMBER: ${{ secrets.FUREAI_SECURITY_NUMBER }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_ADMIN_USER_ID: ${{ secrets.LINE_ADMIN_USER_ID }}
+          SCRAPE_DAYS_AHEAD: "30"
+          HEADLESS: "true"
+          PYTHONUTF8: "1"
+          SCRAPE_GROUP: "tennis"
+        run: python scripts/scrape_takatsu.py
+
+      - name: Node セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Web ビルド
+        if: steps.scrape.outputs.deploy == 'true'
+        working-directory: web
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Firebase Hosting へデプロイ
+        if: steps.scrape.outputs.deploy == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: gym-getter
+          channelId: live

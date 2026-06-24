@@ -1,4 +1,4 @@
-name: 空き確認・自動デプロイ（高津／市民プラザ）
+name: 体育館 空き確認・自動デプロイ（90分ごと）
 
 on:
   schedule:
@@ -45,6 +45,8 @@ jobs:
           SCRAPE_DAYS_AHEAD: "30"
           HEADLESS: "true"
           PYTHONUTF8: "1"
+          # 体育館のみ高頻度で取得（テニスは scrape-tennis.yml で1日1回）
+          SCRAPE_GROUP: "hall"
         run: python scripts/scrape_takatsu.py
 
       - name: Node セットアップ

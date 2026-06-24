@@ -115,6 +115,9 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
   - 付随リファクタ: スロット時刻が施設で異なる（等々力9:00=9-12, 富士見9:00=9-11）ため、`PERIOD_TIMES` を `BASE_TIMES`＋`PERIOD_TIMES_BY_FACILITY`＋`periodTime(facilityId,p)` に分離。`priceFor` に `date` 引数追加。`isTennis` は tennis/fujimi 両対応。テニス系タブは `等々力庭球`/`富士見庭球`。
   - 残テニス3施設（等々力・多摩・富士見）の**スクレイパーは引き続きHTML待ち**。UI/料金/レイアウトは実装済み。
 - 2026-06-22: **施設タブを2カテゴリ（体育館／テニス）に分割**。`FACILITIES` に `cat:"hall"|"tennis"`、`CATEGORIES` 定義。上段=カテゴリタブ、下段=選択カテゴリの施設タブ（`visibleFacilities`）。カテゴリ切替で先頭施設へ自動移動（`selectCategory`）。タブ短縮名は等々力/富士見に簡略化。
+- 2026-06-24: **テニス（時間貸し）のスクレイパー実装・有効化**。調査の結果テニスも体育館と同じ「施設選択→月カレンダー→日クリック」構造、違いは日クリック後の時間スロット画面のみ（img alt 例「6月25日木曜日０９００予約あり」）と判明。`_extract_tennis_slots` を追加し、体育館抽出が空ならフォールバック。施設選択 index 代替で先頭「すべて」を除外（テニスの index ずれ修正）。`FacilityConfig.period_order` 追加。
+  - **性能対策**: テニスは22面で重く90分×16回だと無料枠超過＋20分タイムアウト。`FacilityConfig.group`(hall/tennis)＋環境変数 `SCRAPE_GROUP` で分離。体育館=`scrape.yml`(90分ごと, group=hall)、テニス=`scrape-tennis.yml`(1日1回 JST5:00, group=tennis, timeout35分)。各ワークフローは担当外施設の公開中JSONを web/public に書き戻してデプロイ退行を防止。concurrency group は共通(scrape-deploy)で同時デプロイ回避。
+  - 調査用 `scripts/dump_tennis_html.py`＋`dump-tennis.yml` は役目を終えたら削除可。
 - 2026-06-22: **等々力テニスコートを4施設目として追加（UI完成・スクレイパーのみ未）**。ふれあいネットが「時間貸し型（開始時刻スロット 9:00/12:00/14:00/16:00/18:30・コート10面・1日単位の全コート一覧ビュー）」で既存の時間帯貸しパーサと別形式。
   - 料金=専用使用料1面1枠（9:00→2,280円/12:00・14:00・18:30→1,520円/16:00→1,900円、平日土日同額）。
   - **UI完成**: テニスは `isTennis` 分岐で「コート=行 × スロット=列」の転置レイアウト（コート10面でもモバイルに収まる）。日別一覧行はコート列にせず「空き○枠」サマリ表示。あわせて一覧ヘッダー/日別行のグリッド列数を `areas.length` 連動に修正（従来 `repeat(3)` 固定でプラザ1面/とどろき4面が崩れていたバグも解消）。

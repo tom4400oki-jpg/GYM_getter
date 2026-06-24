@@ -85,6 +85,9 @@ class FacilityConfig:
     scrape_enabled: bool = True  # False ならスクレイプ対象外（UI/料金のみ先行追加した施設）
     # data.json の periodOrder。体育館は午前/午後…、テニスは開始時刻スロット。
     period_order: list = field(default_factory=lambda: list(PERIOD_ORDER))
+    # 実行グループ。体育館は高頻度、テニスはコート数が多く重いので低頻度の別ワークフローで回す。
+    # 環境変数 SCRAPE_GROUP（hall / tennis / all）で対象を絞る。
+    group: str = "hall"
 
     @property
     def output_path(self) -> Path:
@@ -166,6 +169,7 @@ FACILITIES: list[FacilityConfig] = [
         output_filename="data-tennis.json",
         short_area={f"等々力テニス場{i}": str(i) for i in range(1, 11)},
         period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
+        group="tennis",
     ),
     # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）
     FacilityConfig(
@@ -175,6 +179,7 @@ FACILITIES: list[FacilityConfig] = [
         output_filename="data-fujimi.json",
         short_area={f"富士見テニス場{i}": str(i) for i in range(1, 13)},
         period_order=["9:00", "11:00", "13:00", "15:00", "17:00", "18:30"],
+        group="tennis",
     ),
 ]
 
@@ -542,7 +547,24 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
 def main() -> int:
     print(f"=== ふれあいネット 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
 
-    targets = [cfg for cfg in FACILITIES if cfg.scrape_enabled]
+    # 実行グループで対象を絞る（hall=体育館を高頻度 / tennis=テニスを低頻度の別ワークフロー）
+    group = os.getenv("SCRAPE_GROUP", "all").strip().lower()
+    enabled = [cfg for cfg in FACILITIES if cfg.scrape_enabled]
+    if group in ("hall", "tennis"):
+        targets = [cfg for cfg in enabled if cfg.group == group]
+    else:
+        targets = enabled
+    non_targets = [cfg for cfg in FACILITIES if cfg not in targets]
+    print(f"[対象] group={group} → {[c.facility_name for c in targets]}", flush=True)
+
+    # 対象外の施設は公開中(ライブ)のデータを web/public へ書き戻し、デプロイで退行させない
+    for cfg in non_targets:
+        live = _fetch_previous(cfg)
+        if live and live.get("days"):
+            cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
+            cfg.output_path.write_text(
+                json.dumps(live, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
 
     # 通知用に前回（公開中）データを施設ごとに先取得
     previous_map = {cfg.facility_id: _fetch_previous(cfg) for cfg in targets}
