@@ -5,7 +5,12 @@ on:
     # 1日2回：JST 9:00 と 21:00（UTC 0:00 / 12:00）。
     - cron: "0 0 * * *"
     - cron: "0 12 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "データ無変化でも強制デプロイ（web側の変更を反映したい時）"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -51,6 +56,8 @@ jobs:
           PYTHONUTF8: "1"
           # 体育館のみ高頻度で取得（テニスは scrape-tennis.yml で1日1回）
           SCRAPE_GROUP: "hall"
+          # 手動実行で force_deploy を指定した時のみ true。データ無変化でもデプロイする。
+          FORCE_DEPLOY: ${{ inputs.force_deploy }}
         run: python scripts/scrape_takatsu.py
 
       - name: Node セットアップ

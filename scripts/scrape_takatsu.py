@@ -659,6 +659,12 @@ def main() -> int:
         if _process_facility(cfg, collected.get(cfg.facility_id, {}), previous_map[cfg.facility_id]):
             any_deploy = True
 
+    # web 側のソース変更のみを反映したい場合は、データ無変化でも強制デプロイする。
+    force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
+    if force and not any_deploy:
+        print("[デプロイ] FORCE_DEPLOY 指定によりデータ無変化でもデプロイします", flush=True)
+        any_deploy = True
+
     _set_output("deploy", "true" if any_deploy else "false")
     return 0
 
