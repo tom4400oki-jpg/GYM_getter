@@ -46,6 +46,11 @@ try:
 except ImportError:
     pass
 
+try:
+    import jpholiday  # 日本の祝日判定（LINE通知を土日祝に限定するため）
+except ImportError:
+    jpholiday = None
+
 from dataclasses import dataclass, field  # noqa: E402
 from backend.scrapers.fureai_net import (  # noqa: E402
     FureaiNetScraper,
@@ -343,6 +348,25 @@ def _overlay_previous(payload: dict, previous: dict | None, areas: list[str]) ->
 # 空き通知（前回=公開中の data.json と差分を取り、新着のみ通知）
 # ──────────────────────────────────────────
 
+def _is_weekend_or_holiday(date_str: str) -> bool:
+    """土日または日本の祝日なら True。LINE通知の対象判定に使う。
+    jpholiday が無い環境では土日のみを対象にフォールバックする。"""
+    try:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return False
+    if d.weekday() >= 5:  # 月=0 … 土=5・日=6
+        return True
+    if jpholiday is not None:
+        return bool(jpholiday.is_holiday(d))
+    return False
+
+
+def _holiday_only(keys: dict) -> dict:
+    """{(date, area, label): weekday} のうち土日祝のものだけを残す。"""
+    return {k: v for k, v in keys.items() if _is_weekend_or_holiday(k[0])}
+
+
 def _reservable_keys(payload: dict, only_areas: list[str] | None = None) -> dict:
     """予約可能な枠の集合を {(date, area, label): weekday} で返す。
     label は時間帯（午前等）。時間帯不明な日は '終日'。
@@ -403,7 +427,7 @@ def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
 def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> str:
     """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
     変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
-    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠"]
+    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 土日祝の予約できる枠"]
     summary = []
     if added:
         summary.append(f"新たに{len(added)}枠")
@@ -553,24 +577,25 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     )
 
     # ── 差分通知（取得に成功したエリアのみを母集合にする）──
-    new_now = _reservable_keys(payload, only_areas=ok_areas)
+    # LINE通知は土日祝の枠だけを対象にする（平日の変化は通知しない）。
+    new_now = _holiday_only(_reservable_keys(payload, only_areas=ok_areas))
     if previous is None or not previous.get("days"):
         # 前回が無い or 空（プレースホルダ）の場合は初回扱い。
         # 有効化直後に全枠が「新着」として大量通知されるのを防ぐ。
         print(f"[{cfg.facility_name}][通知] 前回データなし/空のため初回は通知しません", flush=True)
     else:
-        old = _reservable_keys(previous, only_areas=ok_areas)
+        old = _holiday_only(_reservable_keys(previous, only_areas=ok_areas))
         added = {k: v for k, v in new_now.items() if k not in old}
         removed = {k: v for k, v in old.items() if k not in new_now}
         if added or removed:
             print(
-                f"[{cfg.facility_name}][通知] 変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
-                f"現在の予約可能枠{len(new_now)}件を通知",
+                f"[{cfg.facility_name}][通知] 土日祝に変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
+                f"現在の土日祝予約可能枠{len(new_now)}件を通知",
                 flush=True,
             )
             _notify_line(cfg, new_now, added, removed)
         else:
-            print(f"[{cfg.facility_name}][通知] 変化なし", flush=True)
+            print(f"[{cfg.facility_name}][通知] 土日祝に変化なし", flush=True)
     return True
 
 
