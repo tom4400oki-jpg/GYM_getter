@@ -21,6 +21,7 @@ DB・FastAPI には依存しない。
     HEADLESS（任意, 既定 true）
 """
 import os
+import re
 import sys
 import json
 import asyncio
@@ -161,8 +162,6 @@ FACILITIES: list[FacilityConfig] = [
         short_area={
             "メインアリーナ": "メイン",
             "サブアリーナ": "サブ",
-            "体育室1": "体育室1",
-            "体育室2": "体育室2",
         },
     ),
     # 等々力テニスコート：時間貸し型でふれあいネットのページ形式が別。
@@ -362,9 +361,27 @@ def _is_weekend_or_holiday(date_str: str) -> bool:
     return False
 
 
-def _holiday_only(keys: dict) -> dict:
-    """{(date, area, label): weekday} のうち土日祝のものだけを残す。"""
-    return {k: v for k, v in keys.items() if _is_weekend_or_holiday(k[0])}
+def _is_evening_label(label: str) -> bool:
+    """18時以降に始まる枠なら True。
+    体育館は『夜間』(18:30-21:30)、テニスは時刻表記('18:30'等)で判定する。"""
+    if label == "夜間":
+        return True
+    m = re.match(r"^(\d{1,2}):", label or "")
+    if m:
+        return int(m.group(1)) >= 18
+    return False
+
+
+def _notify_filter(keys: dict) -> dict:
+    """LINE通知の対象枠だけを残す。
+    - 土日祝の枠は全時間帯
+    - 平日は18時以降に始まる枠（体育館『夜間』／テニス18:30〜）のみ
+    """
+    return {
+        k: v
+        for k, v in keys.items()
+        if _is_weekend_or_holiday(k[0]) or _is_evening_label(k[2])
+    }
 
 
 def _reservable_keys(payload: dict, only_areas: list[str] | None = None) -> dict:
@@ -427,7 +444,7 @@ def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
 def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> str:
     """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
     変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
-    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 土日祝の予約できる枠"]
+    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠（土日祝＋平日夜間）"]
     summary = []
     if added:
         summary.append(f"新たに{len(added)}枠")
@@ -577,25 +594,25 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     )
 
     # ── 差分通知（取得に成功したエリアのみを母集合にする）──
-    # LINE通知は土日祝の枠だけを対象にする（平日の変化は通知しない）。
-    new_now = _holiday_only(_reservable_keys(payload, only_areas=ok_areas))
+    # LINE通知は土日祝の全枠＋平日18時以降の枠を対象にする（平日昼間の変化は通知しない）。
+    new_now = _notify_filter(_reservable_keys(payload, only_areas=ok_areas))
     if previous is None or not previous.get("days"):
         # 前回が無い or 空（プレースホルダ）の場合は初回扱い。
         # 有効化直後に全枠が「新着」として大量通知されるのを防ぐ。
         print(f"[{cfg.facility_name}][通知] 前回データなし/空のため初回は通知しません", flush=True)
     else:
-        old = _holiday_only(_reservable_keys(previous, only_areas=ok_areas))
+        old = _notify_filter(_reservable_keys(previous, only_areas=ok_areas))
         added = {k: v for k, v in new_now.items() if k not in old}
         removed = {k: v for k, v in old.items() if k not in new_now}
         if added or removed:
             print(
-                f"[{cfg.facility_name}][通知] 土日祝に変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
-                f"現在の土日祝予約可能枠{len(new_now)}件を通知",
+                f"[{cfg.facility_name}][通知] 通知対象に変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
+                f"現在の通知対象枠{len(new_now)}件を通知",
                 flush=True,
             )
             _notify_line(cfg, new_now, added, removed)
         else:
-            print(f"[{cfg.facility_name}][通知] 土日祝に変化なし", flush=True)
+            print(f"[{cfg.facility_name}][通知] 通知対象に変化なし", flush=True)
     return True
 
 

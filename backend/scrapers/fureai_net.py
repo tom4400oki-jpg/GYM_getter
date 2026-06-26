@@ -92,8 +92,6 @@ FACILITY_NAV = {
         "areas": [
             {"name": "メインアリーナ", "index": 0},
             {"name": "サブアリーナ",   "index": 1},
-            {"name": "体育室1",        "index": 2},
-            {"name": "体育室2",        "index": 3},
         ],
     },
     "todoroki_tennis": {
