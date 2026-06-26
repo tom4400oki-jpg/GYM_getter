@@ -530,7 +530,7 @@ class FureaiNetScraper(BaseScraper):
         target_dates: list[str],
         on_progress=None,
     ) -> list[dict]:
-        """指定エリアの各日について、日レベル状態＋（空き日のみ）時間帯別状態を返す。
+        """指定エリアの各日について、日レベル状態＋（クリック可能な週のみ）時間帯別状態を返す。
         戻り値: [{facility_id, area_name, booking_type, date, status, status_raw, periods}]
         periods = {'午前':'occupied', '午後1':'available', ...}（取得できた日のみ）"""
         if not self.is_logged_in:
@@ -571,13 +571,17 @@ class FureaiNetScraper(BaseScraper):
                     "periods": {},
                 }
 
-            # 空き（全て空き/一部空き）の日をドリルし、週単位で時間帯を取得
+            # クリック可能な日を「週に1回」ドリルし、週単位で時間帯を取得する。
+            # _extract_day_periods はその週まるごとを返すため、週内の最初の
+            # クリック可能日を踏めば、同じ週の予約あり/開放日にも内訳が付く。
+            # ○/△に限定すると、全日が×/◎の施設（例: 全面予約済みの体育館）で
+            # 内訳が一切取れず詳細を開けなくなるため、ステータスでは絞らない。
             for date_str in month_dates:
                 if date_str in period_cache:
                     continue
                 day = str(int(date_str.split("-")[2]))
                 dd = cur["days"].get(day)
-                if dd and dd["clickable"] and dd["status"] in ("available", "partial"):
+                if dd and dd["clickable"]:
                     if await self._click_day(month, int(day)):
                         # 体育館（午前/午後…）として抽出を試み、空ならテニス（時間スロット）として抽出
                         week = await self._extract_day_periods(year, month)
