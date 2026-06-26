@@ -532,8 +532,13 @@ export default function App() {
               </p>
             )}
             {days.map((day) => {
-              const hasPeriods = areas.some(
-                (a) => Object.keys(day.byArea[a]?.periods ?? {}).length > 0
+              // 時間帯内訳がある日に加え、日レベルの状態が分かる日（×/◎など）も
+              // 開けるようにして全施設で挙動を統一。内訳が無い日は展開時に
+              // 日レベル状態を時間帯グリッドへフォールバック表示する（cell 参照）。
+              const openable = areas.some(
+                (a) =>
+                  Object.keys(day.byArea[a]?.periods ?? {}).length > 0 ||
+                  (day.byArea[a]?.status ?? "unknown") !== "unknown"
               );
               const isOpen = expanded.has(day.date);
               const wd = day.weekday;
@@ -554,15 +559,15 @@ export default function App() {
                   )}
                 >
                   <button
-                    disabled={!hasPeriods}
-                    onClick={() => hasPeriods && toggle(day.date)}
+                    disabled={!openable}
+                    onClick={() => openable && toggle(day.date)}
                     style={{ gridTemplateColumns: listCols }}
                     className={cn(
                       "grid w-full items-center gap-px text-center transition-colors",
-                      hasPeriods && "cursor-pointer",
+                      openable && "cursor-pointer",
                       isOpen
                         ? "bg-emerald-500 text-white"
-                        : hasPeriods && "hover:bg-emerald-50 active:bg-emerald-50"
+                        : openable && "hover:bg-emerald-50 active:bg-emerald-50"
                     )}
                   >
                     <div
@@ -575,7 +580,7 @@ export default function App() {
                         {dn}
                         <span className="ml-0.5 text-[9px] font-normal">({wd})</span>
                       </span>
-                      {hasPeriods && (
+                      {openable && (
                         <ChevronDown
                           className={cn(
                             "h-3.5 w-3.5 shrink-0 transition-transform",
