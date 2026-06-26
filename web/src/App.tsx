@@ -297,6 +297,21 @@ function dayHasReservable(day: DayData): boolean {
   return Object.values(day.byArea).some((a) => isReservable(a.status));
 }
 
+// 18時以降に始まる枠か（体育館『夜間』18:30〜／テニスは時刻表記'18:30'等）
+function isEveningPeriod(label: string): boolean {
+  if (label === "夜間") return true;
+  const m = /^(\d{1,2}):/.exec(label);
+  return m ? Number(m[1]) >= 18 : false;
+}
+
+function dayHasEveningReservable(day: DayData): boolean {
+  return Object.values(day.byArea).some((a) =>
+    Object.entries(a.periods ?? {}).some(
+      ([p, st]) => isEveningPeriod(p) && isReservable(st)
+    )
+  );
+}
+
 function fmtUpdated(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
@@ -317,6 +332,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [onlyReservable, setOnlyReservable] = useState(true);
   const [onlyWeekend, setOnlyWeekend] = useState(false);
+  const [onlyEvening, setOnlyEvening] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   async function load(fid: FacilityId = facilityId) {
@@ -347,8 +363,9 @@ export default function App() {
     let ds = data.days;
     if (onlyReservable) ds = ds.filter(dayHasReservable);
     if (onlyWeekend) ds = ds.filter((d) => d.weekday === "土" || d.weekday === "日");
+    if (onlyEvening) ds = ds.filter(dayHasEveningReservable);
     return ds;
-  }, [data, onlyReservable, onlyWeekend]);
+  }, [data, onlyReservable, onlyWeekend, onlyEvening]);
 
   const reservableCount = useMemo(
     () => (data ? data.days.filter(dayHasReservable).length : 0),
@@ -484,6 +501,10 @@ export default function App() {
           <label className="flex items-center gap-1.5 text-[11px] text-slate-600">
             <Switch checked={onlyWeekend} onCheckedChange={setOnlyWeekend} />
             土日だけ表示
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <Switch checked={onlyEvening} onCheckedChange={setOnlyEvening} />
+            18時以降だけ表示
           </label>
         </div>
       </header>
