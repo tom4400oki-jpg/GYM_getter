@@ -95,6 +95,17 @@ jobs:
             fi
           fi
           export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+          # === 一時診断（機密の中身は出さない） ===
+          echo "[diag] GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+          echo "[diag] file bytes=$(wc -c < "$sa")"
+          echo "[diag] type=$(jq -r '.type // "NONE"' "$sa")"
+          echo "[diag] project_id=$(jq -r '.project_id // "NONE"' "$sa")"
+          echo "[diag] has client_email=$(jq -e 'has("client_email")' "$sa" >/dev/null 2>&1 && echo yes || echo no)"
+          echo "[diag] has private_key=$(jq -e 'has("private_key")' "$sa" >/dev/null 2>&1 && echo yes || echo no)"
+          echo "[diag] top-level keys=$(jq -r 'keys | join(",")' "$sa" 2>/dev/null)"
+          echo "::group::[diag] firebase projects:list"
+          npx -y firebase-tools@latest projects:list --non-interactive 2>&1 | head -20
+          echo "::endgroup::"
           max=3
           attempt=1
           while :; do
