@@ -643,13 +643,29 @@ def main() -> int:
 
     collected, maintenance = _run_async(_collect_all(targets))
 
+    force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
+
     # ── ログイン不可（全施設共通）──────────────
     if collected is None:
-        _set_output("deploy", "false")
         if maintenance:
-            # メンテ時間は正常系。各 data.json 維持・通知/デプロイなし・ジョブ成功扱い
+            # メンテ時間は正常系。各 data.json 維持・通知なし・ジョブ成功扱い。
+            # ただし FORCE_DEPLOY 指定時は、対象施設も公開中(ライブ)データを書き戻して
+            # 退行を防いだ上でデプロイし、web 側のソース変更だけを反映する。
+            if force:
+                for cfg in targets:
+                    live = previous_map.get(cfg.facility_id)
+                    if live and live.get("days"):
+                        cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
+                        cfg.output_path.write_text(
+                            json.dumps(live, ensure_ascii=False, indent=2), encoding="utf-8"
+                        )
+                print("[メンテ] FORCE_DEPLOY 指定：ライブデータを書き戻してデプロイします", flush=True)
+                _set_output("deploy", "true")
+                return 0
+            _set_output("deploy", "false")
             print("[メンテ] ふれあいネットのログイン機能停止中。各 data.json は維持して終了", flush=True)
             return 0
+        _set_output("deploy", "false")
         # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
         _notify_admin("ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）")
         return 1
@@ -660,7 +676,6 @@ def main() -> int:
             any_deploy = True
 
     # web 側のソース変更のみを反映したい場合は、データ無変化でも強制デプロイする。
-    force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
     if force and not any_deploy:
         print("[デプロイ] FORCE_DEPLOY 指定によりデータ無変化でもデプロイします", flush=True)
         any_deploy = True
