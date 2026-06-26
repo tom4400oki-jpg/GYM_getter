@@ -81,8 +81,20 @@ jobs:
           # リトライ処理へ入る前に即終了してしまうため、ここで明示的に無効化する。
           set +e
           set -uo pipefail
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          sa="$RUNNER_TEMP/firebase-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$sa"
+          # Secret が base64 で保存されている場合に備える（生JSONならそのまま使用）。
+          if ! jq -e . "$sa" >/dev/null 2>&1; then
+            if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$sa.dec" 2>/dev/null \
+               && jq -e . "$sa.dec" >/dev/null 2>&1; then
+              mv "$sa.dec" "$sa"
+              echo "サービスアカウントを base64 からデコードしました。"
+            else
+              echo "::error::FIREBASE_SERVICE_ACCOUNT が有効な JSON ではありません。"
+              exit 1
+            fi
+          fi
+          export GOOGLE_APPLICATION_CREDENTIALS="$sa"
           max=3
           attempt=1
           while :; do
