@@ -70,55 +70,38 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
+      # 認証実績のある公式アクションでデプロイ。ランナー→Google API の
+      # "Premature close" で、リリース成功後の再送が "is the current active
+      # version" 400 を返し step が失敗扱いになることがあるため continue-on-error。
+      # 実際に反映されたかは次のステップでライブ内容を見て判定する。
       - name: Firebase Hosting へデプロイ
         if: steps.scrape.outputs.deploy == 'true'
+        id: deploy
+        continue-on-error: true
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: gym-getter
+          channelId: live
+
+      # ライブの data-tennis.json（テニス側で必ず更新するファイル）が
+      # ビルド内容（updatedAt）に一致すれば反映済みとみなす。
+      - name: デプロイ反映の検証
+        if: steps.scrape.outputs.deploy == 'true'
         shell: bash
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          # ランナー→Google API 間の "Premature close"（一過性の切断）対策。
-          # firebase-tools 内部のリトライが成功済みリリースを再送し
-          # "is the current active version" 400 を返すことがあるため、
-          # ここでは (1) 最大3回リトライ (2) 差分なし/再送由来の上記エラーは成功扱い とする。
-          # GitHub の shell: bash は既定で -e（errexit）が付き、npx 失敗時に
-          # リトライ処理へ入る前に即終了してしまうため、ここで明示的に無効化する。
-          set +e
           set -uo pipefail
-          sa="$RUNNER_TEMP/firebase-sa.json"
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$sa"
-          # Secret が base64 で保存されている場合に備える（生JSONならそのまま使用）。
-          if ! jq -e . "$sa" >/dev/null 2>&1; then
-            if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$sa.dec" 2>/dev/null \
-               && jq -e . "$sa.dec" >/dev/null 2>&1; then
-              mv "$sa.dec" "$sa"
-              echo "サービスアカウントを base64 からデコードしました。"
-            else
-              echo "::error::FIREBASE_SERVICE_ACCOUNT が有効な JSON ではありません。"
-              exit 1
+          want="$(jq -r '.updatedAt' web/dist/data-tennis.json)"
+          echo "ビルド済み updatedAt=$want"
+          for i in 1 2 3 4 5 6; do
+            live="$(curl -fsS "https://gym-getter.web.app/data-tennis.json?t=$(date +%s%N)" | jq -r '.updatedAt' 2>/dev/null || echo "")"
+            echo "[$i] ライブ updatedAt=$live"
+            if [ -n "$want" ] && [ "$live" = "$want" ]; then
+              echo "ライブ反映を確認。デプロイ成功とみなします。"
+              exit 0
             fi
-          fi
-          export GOOGLE_APPLICATION_CREDENTIALS="$sa"
-          max=3
-          attempt=1
-          while :; do
-            echo "::group::Firebase deploy (attempt $attempt/$max)"
-            out="$(npx -y firebase-tools@latest deploy --only hosting --project gym-getter --non-interactive 2>&1)"
-            status=$?
-            echo "$out"
-            echo "::endgroup::"
-            if [ "$status" -eq 0 ]; then
-              echo "デプロイ成功"
-              break
-            fi
-            if printf '%s' "$out" | grep -q "is the current active version"; then
-              echo "差分なし（既に最新がライブ）。成功扱いにします。"
-              break
-            fi
-            if [ "$attempt" -ge "$max" ]; then
-              echo "デプロイが $max 回失敗しました。"
-              exit 1
-            fi
-            attempt=$((attempt + 1))
-            echo "一過性エラーの可能性。15秒後に再試行します..."
-            sleep 15
+            sleep 10
           done
+          echo "::error::ライブにビルド内容が反映されていません（deploy outcome=${{ steps.deploy.outcome }}）。"
+          exit 1
