@@ -77,6 +77,9 @@ jobs:
           # firebase-tools 内部のリトライが成功済みリリースを再送し
           # "is the current active version" 400 を返すことがあるため、
           # ここでは (1) 最大3回リトライ (2) 差分なし/再送由来の上記エラーは成功扱い とする。
+          # GitHub の shell: bash は既定で -e（errexit）が付き、npx 失敗時に
+          # リトライ処理へ入る前に即終了してしまうため、ここで明示的に無効化する。
+          set +e
           set -uo pipefail
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
