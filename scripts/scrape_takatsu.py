@@ -21,7 +21,6 @@ DB・FastAPI には依存しない。
     HEADLESS（任意, 既定 true）
 """
 import os
-import re
 import sys
 import json
 import asyncio
@@ -46,11 +45,6 @@ try:
     load_dotenv(ROOT / ".env")
 except ImportError:
     pass
-
-try:
-    import jpholiday  # 日本の祝日判定（LINE通知を土日祝に限定するため）
-except ImportError:
-    jpholiday = None
 
 from dataclasses import dataclass, field  # noqa: E402
 from backend.scrapers.fureai_net import (  # noqa: E402
@@ -347,41 +341,9 @@ def _overlay_previous(payload: dict, previous: dict | None, areas: list[str]) ->
 # 空き通知（前回=公開中の data.json と差分を取り、新着のみ通知）
 # ──────────────────────────────────────────
 
-def _is_weekend_or_holiday(date_str: str) -> bool:
-    """土日または日本の祝日なら True。LINE通知の対象判定に使う。
-    jpholiday が無い環境では土日のみを対象にフォールバックする。"""
-    try:
-        d = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except (ValueError, TypeError):
-        return False
-    if d.weekday() >= 5:  # 月=0 … 土=5・日=6
-        return True
-    if jpholiday is not None:
-        return bool(jpholiday.is_holiday(d))
-    return False
-
-
-def _is_evening_label(label: str) -> bool:
-    """18時以降に始まる枠なら True。
-    体育館は『夜間』(18:30-21:30)、テニスは時刻表記('18:30'等)で判定する。"""
-    if label == "夜間":
-        return True
-    m = re.match(r"^(\d{1,2}):", label or "")
-    if m:
-        return int(m.group(1)) >= 18
-    return False
-
-
 def _notify_filter(keys: dict) -> dict:
-    """LINE通知の対象枠だけを残す。
-    - 土日祝の枠は全時間帯
-    - 平日は18時以降に始まる枠（体育館『夜間』／テニス18:30〜）のみ
-    """
-    return {
-        k: v
-        for k, v in keys.items()
-        if _is_weekend_or_holiday(k[0]) or _is_evening_label(k[2])
-    }
+    """LINE通知の対象枠。曜日・時間帯で絞らず、予約可能な枠をすべて対象にする。"""
+    return dict(keys)
 
 
 def _reservable_keys(payload: dict, only_areas: list[str] | None = None) -> dict:
@@ -444,7 +406,7 @@ def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
 def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> str:
     """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
     変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
-    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠（土日祝＋平日夜間）"]
+    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠"]
     summary = []
     if added:
         summary.append(f"新たに{len(added)}枠")
@@ -594,7 +556,7 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     )
 
     # ── 差分通知（取得に成功したエリアのみを母集合にする）──
-    # LINE通知は土日祝の全枠＋平日18時以降の枠を対象にする（平日昼間の変化は通知しない）。
+    # LINE通知は曜日・時間帯で絞らず、予約可能な枠すべてを対象にする。
     new_now = _notify_filter(_reservable_keys(payload, only_areas=ok_areas))
     if previous is None or not previous.get("days"):
         # 前回が無い or 空（プレースホルダ）の場合は初回扱い。
