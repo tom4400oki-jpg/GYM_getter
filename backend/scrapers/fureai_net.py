@@ -115,15 +115,6 @@ FACILITY_NAV = {
             {"name": "テニス場Ｂ", "index": 1},
         ],
     },
-    "marien_tennis": {
-        "region": "川崎区",
-        "building": "川崎マリエンテニスコート",
-        "has_lottery": True,
-        # 時間貸し型（5スロット・12面）。施設一覧の表記は「テニスコートN」。
-        "areas": [
-            {"name": f"テニスコート{i}", "index": i - 1} for i in range(1, 13)
-        ],
-    },
     "daishi_tennis": {
         "region": "川崎区",
         "building": "大師テニスコート",
