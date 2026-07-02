@@ -8,7 +8,7 @@
 ## 現行アーキテクチャ（本番稼働中）
 ```
 GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
-  ├─ scripts/scrape_takatsu.py  (Playwright / 複数施設を1ログインで順次取得)
+  ├─ scripts/scrape_fureai.py  (Playwright / 複数施設を1ログインで順次取得)
   │     ├─ web/public/data.json（高津）・data-plaza.json（市民プラザ）を生成
   │     └─ 施設ごとに公開中 data と差分を取り、空き/埋まりの変化時に「現在の全空き枠を日付順」でLINE通知（施設名付き・ブロードキャスト）
   └─ web を build → Firebase Hosting (live) へデプロイ
@@ -25,13 +25,19 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
 - メンテ時間等で取得0件のときは `data.json` を上書きせず deploy/通知をスキップ（ライブ保持）。
 
 ## 主要ファイル
-- `scripts/scrape_takatsu.py` … スタンドアロン・スクレイパー（DB非依存）。`FACILITIES`(FacilityConfig のリスト)で複数施設を定義し、1ログインで順次取得→施設ごとに `data(-*).json` 生成＋LINE通知。施設追加はここに1エントリ＋`FACILITY_NAV` 追加＋Webの `FACILITIES`/`PRICES` 追加
+- `scripts/scrape_fureai.py` … スタンドアロン・スクレイパー（DB非依存、旧 scrape_takatsu.py）。
+  `FACILITIES`(FacilityConfig のリスト)で複数施設を定義（タブ名・料金・時刻メタ込み）、1ログインで順次取得→
+  施設ごとに `data(-*).json` 生成＋`facilities.json` 生成＋LINE通知。
+  **施設追加は `FACILITY_NAV`＋`FACILITIES` の2箇所のみ（フロント変更不要）**
 - `backend/scrapers/fureai_net.py` … `FureaiNetScraper`（`check_area_days` / `FACILITY_NAV` / `get_target_dates` / `map_status`）
 - `backend/scrapers/base.py` … Playwright ライフサイクル管理のみの基底クラス
-- `requirements-scrape.txt` … playwright / python-dotenv のみ（現役の唯一の依存定義）
-- `web/` … Vite+React+TS+Tailwind の静的SPA（`src/App.tsx`, `src/lib/schema.ts`(Zod), `src/components/ui/*`）
-- `firebase.json` / `.firebaserc` … Hosting設定（public=web/dist, SPA rewrite, data.jsonはno-cache）
-- `.github/workflows/scrape.yml` … スクレイプ→build→Hostingデプロイ
+- `requirements-scrape.txt` … playwright / python-dotenv / jpholiday（バージョン固定済み）
+- `tests/test_scrape_fureai.py` … 純粋関数の pytest（scrape.yml が実行）
+- `web/` … Vite+React+TS+Tailwind の静的SPA
+  （`src/App.tsx`, `src/lib/{schema,facilities,status}.ts`(Zod), `src/components/DayRow.tsx`, `src/components/ui/*`）
+- `web/public/facilities.json` … 施設タブ・料金・利用時刻メタ（scrape_fureai.py が生成、手編集しない）
+- `firebase.json` / `.firebaserc` … Hosting設定（public=web/dist, SPA rewrite, data*/facilities.json は no-cache）
+- `.github/workflows/scrape.yml` / `scrape-tennis.yml` … テスト→スクレイプ→build→Hostingデプロイ
 
 ## data.json スキーマ（periods 形式・現行）
 ```json
@@ -82,8 +88,76 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
       - 通知見出しを `FACILITY_NAME`/`NOTIFY_EMOJI` 参照に（施設追加で関数編集不要）。施設追加手順をコメント明文化。
       - 通知は `_notify_line`（利用者）/`_notify_admin`（管理者）に分離済み。
 
+## 次期改善フェーズ（2026-07-02 策定：メンテ性・安定性・拡張性・満足度）
+
+> 方針: 1フェーズ＝1〜2セッションで完結する粒度。各フェーズ完了ごとに動作確認→plan.md 更新。
+> 優先順位は「壊れたら困る順」＝ 安定性 → メンテ性 → 満足度 → 拡張性。
+
+### Phase 4: 安定性ハードニング第2弾（サイレント劣化の検知）✅ 2026-07-02 完了
+- [x] **unknown率アラート**: `_unknown_raw_ratio` で「status_raw があるのに unknown 判定」の割合を
+      エリアごとに集計し、閾値（`UNKNOWN_ALERT_RATIO` 既定30%）超で `_notify_admin`。
+      ふれあいネットの文言変更・構造変化を「取得0件になる前」に検知する。
+- [x] **依存バージョン固定**: `requirements-scrape.txt` は既にピン留め済みだった（playwright==1.49.0 /
+      python-dotenv==1.0.1 / jpholiday==0.1.10）ため対応不要と確認。
+- [x] **スクレイプ結果のスキーマ検証（Python側）**: `_validate_payload`（日付形式・曜日・エリアキー一致・
+      status/period が既知enum・periodOrder 整合）を書き込み直前に実行。エラー時は更新スキップ＋管理者通知。
+      フロントの Zod と二重防御。
+- [x] **LINE通知の月間送信数ガード**: 計画のファイル持ち回りでなく **LINE公式 quota API**
+      （`/v2/bot/message/quota` ＋ `/quota/consumption`）で実消費を照会する方式に変更
+      （broadcast は友だち数×1通で消費されるため実測照会が唯一正確・永続化不要）。
+      broadcast 成功時に `_check_line_quota` を呼び、無料枠90%以上で管理者警告。
+- [x] **（追加発見）data-*.json の CDN キャッシュバグ修正**: `firebase.json` の no-cache が
+      `/data.json` のみで、他施設の data-*.json は CDN に最大1時間キャッシュされていた
+      （`_fetch_previous` が古い前回値を掴み差分通知が誤る恐れ）。`/data*.json` に拡大。
+- [x] 検証: 純粋関数の pytest を `tests/test_scrape_takatsu.py` に**常設**（14件全通過）＋ py_compile OK。
+      本番確認は次回 workflow_dispatch / cron 実行時のログで行う。
+
+### Phase 5: メンテナンス性（施設定義の一元化と分割）✅ 2026-07-02 完了
+- [x] **施設メタデータの一元化（facilities.json 方式）**: data-*.json への埋め込みでなく、
+      **静的メタは `facilities.json` に分離**する設計に変更（データ＝可用性、メタ＝設定の分離。
+      スクレイプ失敗時もメタは常に最新化される）。`FacilityConfig` に `web_id`/`short_name`/
+      `period_times`/`prices`（宣言的な料金定義: match/default/sets/seasonal）を追加し、
+      `write_facilities_index()` が毎実行時に `web/public/facilities.json` を生成。
+      フロントは `lib/facilities.ts`（Zod検証＋`priceFor`/`periodTime`/`shortArea` 解釈器）で読む。
+      → 施設追加は **FACILITY_NAV＋FACILITIES の2箇所（Python側のみ）** に。フロントの
+      `PRICES`/`PERIOD_TIMES_BY_FACILITY`/`isTennis`/`FACILITIES`/`fujimiPrice`/`shortArea` を全廃。
+- [x] **App.tsx のコンポーネント分割**: 753行 → 約340行。`components/DayRow.tsx`（日別行＋
+      時間帯グリッド展開・テニス転置レイアウト）、`lib/status.ts`（STATUS_META）、
+      `lib/facilities.ts`（施設メタ読込・料金計算）に分離。
+- [x] **Python 純粋関数のテストを常設**: `tests/test_scrape_fureai.py`（14件）。
+      `scrape.yml` のスクレイプ前に「単体テスト」step を追加（壊れたロジックでの本番実行を防ぐ）。
+- [x] **不要物の削除・改名**: `scripts/dump_tennis_html.py`・`dump-tennis.yml`・`tennis_html_dl/` を削除。
+      `scrape_takatsu.py` → **`scrape_fureai.py`** へ改名（全参照を更新）。
+- [x] 検証: pytest 14件通過・py_compile OK・`npm run build` 成功。dev プレビューで
+      体育館（高津: 料金3,800円等・時刻表示）とテニス（富士見: 7月の17:00枠が季節料金1,650円、
+      転置グリッド、タブ4施設）の表示をライブデータで確認。コンソールエラー0。
+
+### Phase 6: ユーザー満足度 ✅ 2026-07-02 完了
+- [x] **祝日の料金・フィルタ対応**: `_build_payload` が jpholiday で `days[].isHoliday` を出力
+      （`_is_jp_holiday`）。フロントは `isWeekendOrHoliday` で休日料金判定（旧: 土日のみ→祝日が
+      平日料金と誤表示だったのを修正）、「土日だけ表示」→**「土日祝だけ表示」**、
+      日付は祝日を赤表示＋「(水・祝)」表記。旧データは `isHoliday` 無し→Zod default false で互換。
+- [x] **URL で施設・フィルタ状態を共有**: `?f=<施設id>&weekend=1&evening=1`。
+      LINE通知本文のリンクを `APP_URL/?f=<施設id>` にし「通知タップ→該当施設が開く」導線に。
+- [x] **選択状態の記憶**: 施設・カテゴリ・3トグルを localStorage（`gym-getter:view`）に保存し
+      再訪時に復元（URL パラメータが優先）。
+- [x] **横断サマリビュー「すべて」タブ**: `components/AllSummary.tsx`。カテゴリ内全施設の
+      data-*.json を並列 fetch し「予約できる日 → 空きのある施設チップ（空き枠数付き）」を
+      日付順に俯瞰。チップタップで該当施設タブへ移動。土日祝／18時以降フィルタも効く。
+      取得失敗施設は注記表示（1施設の失敗で全体は壊さない）。
+- [x] 検証: dev プレビューで祝日表示（(水・祝)赤・休日料金4,560円）・?f=fujimi&weekend=1 の復元・
+      localStorage 復元・「すべて」→チップ遷移を確認。コンソールエラー0。pytest 15件通過・build 成功。
+
+### Phase 7: 拡張性（将来・必要になったら）
+- [ ] **抽選枠の取得**: 現在は `reservation`（予約）のみ。抽選期間の枠を別レーンで表示。
+- [ ] **通知フィルタ購読**: LINE リッチメニュー等で「土日のみ」「テニスのみ」等の個人設定
+      （現状ブロードキャスト一律。人数が増えたら Messaging API の per-user push ＋ 簡易設定保存が必要）。
+- [ ] **料金の年度更新運用**: 使用料は令和7年度ハードコード。毎年4月に要更新である旨を
+      keepalive.yml のコメント or 3月末の管理者LINE リマインダで担保。
+
 ## ローカル実行メモ
-- スクレイプ: `py scripts/scrape_takatsu.py`（`python` はストアスタブ不可。`py` ランチャ使用）
+- スクレイプ: `py scripts/scrape_fureai.py`（`python` はストアスタブ不可。`py` ランチャ使用）
+- テスト: `py -m pytest tests/ -q`
   - 依存: `py -m pip install -r requirements-scrape.txt` ＋ `py -m playwright install chromium`
   - 環境変数: `.env`（`FUREAI_USER_ID`/`FUREAI_PASSWORD`/`FUREAI_SECURITY_NUMBER`）。`SCRAPE_DAYS_AHEAD`(既定30) / `HEADLESS`(既定true) / `PYTHONUTF8=1` 推奨
 - 表示: `cd web && npm run dev`（http://localhost:5173）／ build: `npm run build`
@@ -123,6 +197,15 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
 - 2026-06-24: **大師テニスコートを追加**（テニスカテゴリ・3面）。調査で3面・4スロット(9:00/12:00/14:00/16:00)を確認。料金フラット1,520円(2時間, 市区内)。`scrape-tennis.yml`(group=tennis)で取得。`PRICES.daishi`/`PERIOD_TIMES_BY_FACILITY.daishi`/`data-daishi.json` 追加。
 - 2026-06-24: **川崎マリエンテニスコート(12面)・多摩テニス(2面)を追加**。マリエン=東扇島・5枠(9/12/14/16/18:30)・9:00枠1,830円/他1,220円。多摩テニス=多摩SC内テニス場Ａ/Ｂ・5枠・個人利用9:00枠2,700円/12-16枠1,800円/18:30枠(照明込)3,720円。FACILITY_NAV `tama_tennis` は `tama_sports_center` と同建物だが別エントリ(テニス場 idx0,1)。Web id は `tamatennis`(体育館 `tama` と別)。テニス計**5施設**（等々力5枠/富士見6枠/大師4枠/マリエン5枠/多摩5枠）。
   - 調査用 `scripts/dump_tennis_html.py`＋`dump-tennis.yml` は役目を終えたら削除可。
+- 2026-07-02: **Phase 6（ユーザー満足度）完了**。祝日対応（isHoliday 出力・休日料金・土日祝フィルタ・
+  祝日赤表示）、URL共有（?f=/weekend=/evening=）、LINE通知リンクの施設直行、localStorage 復元、
+  「すべて」横断サマリタブ（施設チップ→タブ遷移）。※本番反映は次回 Actions 実行（または force_deploy）。
+  祝日料金の isHoliday はスクレイパー再実行後のデータから有効。
+- 2026-07-02: **Phase 4（安定性第2弾）＋ Phase 5（メンテ性）完了**。unknown率アラート・payloadスキーマ検証・
+  LINE quota API 監視・data-*.json の CDN キャッシュバグ修正（firebase.json）。施設メタを `facilities.json` に
+  一元化しフロントの施設定義を全廃（施設追加=Python 2箇所のみ）。App.tsx を 753→約340行に分割
+  （DayRow/status/facilities）。pytest 14件を `tests/` に常設し scrape.yml で実行。
+  `scrape_takatsu.py`→`scrape_fureai.py` 改名。dump_tennis 系・`tennis_html_dl/` 削除。
 - 2026-07-01: **川崎マリエンテニスコートを除外（ユーザー希望でスクレイピング自体を停止）**。`scripts/scrape_takatsu.py`・`backend/scrapers/fureai_net.py` から `marien_tennis` 設定を削除、`web/src/App.tsx` の `FACILITIES`/`PRICES`/`PERIOD_TIMES_BY_FACILITY`/`isTennis` から `marien` を削除、`web/public/data-marien.json` を削除。テニス計**4施設**（等々力5枠/富士見6枠/大師4枠/多摩5枠）。
 - 2026-06-22: **等々力テニスコートを4施設目として追加（UI完成・スクレイパーのみ未）**。ふれあいネットが「時間貸し型（開始時刻スロット 9:00/12:00/14:00/16:00/18:30・コート10面・1日単位の全コート一覧ビュー）」で既存の時間帯貸しパーサと別形式。
   - 料金=専用使用料1面1枠（9:00→2,280円/12:00・14:00・18:30→1,520円/16:00→1,900円、平日土日同額）。

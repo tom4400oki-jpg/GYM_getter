@@ -1,7 +1,7 @@
 name: テニス空き確認・自動デプロイ（等々力／富士見）
 
 # テニスはコート数が多く（等々力10面＋富士見12面）取得に時間がかかるため、
-# 体育館とは分離して1日1回だけ実行する。体育館側のライブデータは scrape_takatsu.py が
+# 体育館とは分離して1日1回だけ実行する。体育館側のライブデータは scrape_fureai.py が
 # 公開中JSONを書き戻して保持するので、デプロイで体育館データが退行することはない。
 
 on:
@@ -54,7 +54,7 @@ jobs:
           HEADLESS: "true"
           PYTHONUTF8: "1"
           SCRAPE_GROUP: "tennis"
-        run: python scripts/scrape_takatsu.py
+        run: python scripts/scrape_fureai.py
 
       - name: Node セットアップ
         uses: actions/setup-node@v4

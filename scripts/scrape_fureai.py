@@ -11,7 +11,7 @@ DB・FastAPI には依存しない。
   - 異常（真のログイン失敗・全エリア失敗・部分失敗）は管理者に通知し Actions に注釈を出す
 
 使い方:
-    python scripts/scrape_takatsu.py
+    python scripts/scrape_fureai.py
 
 環境変数（.env または GitHub Secrets）:
     FUREAI_USER_ID, FUREAI_PASSWORD, FUREAI_SECURITY_NUMBER
@@ -73,12 +73,142 @@ RESERVE_URL = "https://www.fureai-net.city.kawasaki.jp/web/"
 
 LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
 LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
+LINE_QUOTA_URL = "https://api.line.me/v2/bot/message/quota"
+LINE_QUOTA_CONSUMPTION_URL = "https://api.line.me/v2/bot/message/quota/consumption"
+
+# map_status が返しうる全ステータス（web/src/lib/schema.ts の Zod enum と対）
+KNOWN_STATUSES = {
+    "available", "partial", "open", "occupied", "closed",
+    "rain", "cancelling", "planned", "out_of_period", "unknown",
+}
+
+# status_raw があるのに unknown 判定になった割合がこの値以上なら管理者へ警告
+# （ふれあいネットの文言変更を「取得0件」になる前に検知する）
+UNKNOWN_ALERT_RATIO = float(os.getenv("UNKNOWN_ALERT_RATIO", "0.3"))
+
+
+# ──────────────────────────────────────────
+# 表示メタ（時間帯の利用時刻・使用料）
+# フロントは facilities.json（本スクリプトが生成）経由でこれを読む。
+# 施設定義の単一の真実は FACILITIES（＋fureai_net.py の FACILITY_NAV）。
+# ──────────────────────────────────────────
+
+# 体育館系（時間帯貸し）の利用時刻
+HALL_PERIOD_TIMES = {
+    "午前": "9:00〜12:00",
+    "午後1": "12:10〜15:10",
+    "午後2": "15:20〜18:20",
+    "夜間": "18:30〜21:30",
+}
+
+# 料金定義の形式（フロントの priceFor が解釈する）:
+#   match:    [{"contains": 部分一致文字列, "key": 料金区分キー}, ...]（先勝ち）
+#   default:  match に当たらないときの料金区分キー
+#   sets:     区分キー → {"weekday": {時間帯: 円}, "holiday": {時間帯: 円}}
+#   seasonal: [{"period": 時間帯, "months": [対象月...], "yen": 円}]（該当月は上書き・任意）
+# 金額は令和7年度・入場料を徴収しない場合の使用料。
+
+
+def _flat_price(periods: list, yen_by_period: dict | int) -> dict:
+    """平日土日同額のフラット料金。yen_by_period が int なら全スロット同額。"""
+    if isinstance(yen_by_period, int):
+        yen_by_period = {p: yen_by_period for p in periods}
+    return {
+        "match": [],
+        "default": "コート",
+        "sets": {"コート": {"weekday": yen_by_period, "holiday": yen_by_period}},
+    }
+
+
+# 高津・宮前・幸・麻生・多摩（体育館）共通：大体育室半面/小体育室
+SPORTS_CENTER_PRICE = {
+    "match": [{"contains": "小", "key": "小"}],
+    "default": "半面",
+    "sets": {
+        "半面": {
+            "weekday": {"午前": 3800, "午後1": 4530, "午後2": 5080, "夜間": 5800},
+            "holiday": {"午前": 4560, "午後1": 5430, "午後2": 6090, "夜間": 6960},
+        },
+        "小": {
+            "weekday": {"午前": 4230, "午後1": 4960, "午後2": 5560, "夜間": 6290},
+            "holiday": {"午前": 5070, "午後1": 5950, "午後2": 6670, "夜間": 7540},
+        },
+    },
+}
+
+# カルッツかわさき：平日土日同額フラット
+CULTTZ_PRICE = {
+    "match": [{"contains": "小", "key": "小"}],
+    "default": "半面",
+    "sets": {
+        "半面": {
+            "weekday": {"午前": 4500, "午後1": 5400, "午後2": 6100, "夜間": 6900},
+            "holiday": {"午前": 4500, "午後1": 5400, "午後2": 6100, "夜間": 6900},
+        },
+        "小": {
+            "weekday": {"午前": 5600, "午後1": 6500, "午後2": 7300, "夜間": 8300},
+            "holiday": {"午前": 5600, "午後1": 6500, "午後2": 7300, "夜間": 8300},
+        },
+    },
+}
+
+# 川崎市民プラザ 体育館（貸切）：平日は午前/夜間のみ設定
+PLAZA_PRICE = {
+    "match": [],
+    "default": "体育館",
+    "sets": {
+        "体育館": {
+            "weekday": {"午前": 5700, "夜間": 6500},
+            "holiday": {"午前": 6800, "午後1": 6200, "午後2": 6200, "夜間": 7800},
+        },
+    },
+}
+
+# とどろきアリーナ：アマチュアスポーツ・入場料なし（サブは全面料金）
+TODOROKI_PRICE = {
+    "match": [
+        {"contains": "メイン", "key": "メイン"},
+        {"contains": "サブ", "key": "サブ"},
+    ],
+    "default": "体育室",
+    "sets": {
+        "メイン": {
+            "weekday": {p: 20160 for p in PERIOD_ORDER},
+            "holiday": {p: 24190 for p in PERIOD_ORDER},
+        },
+        "サブ": {
+            "weekday": {p: 13440 for p in PERIOD_ORDER},
+            "holiday": {p: 16120 for p in PERIOD_ORDER},
+        },
+        "体育室": {
+            "weekday": {p: 3360 for p in PERIOD_ORDER},
+            "holiday": {p: 4030 for p in PERIOD_ORDER},
+        },
+    },
+}
+
+# 富士見テニス：季節別料金（17:00 は 3〜9月 1,650円 / 15:00 は 11〜12月 2,800円）
+FUJIMI_PRICE = {
+    "match": [],
+    "default": "コート",
+    "sets": {
+        "コート": {
+            "weekday": {"9:00": 2200, "11:00": 2200, "13:00": 2200, "15:00": 2200, "17:00": 2550, "18:30": 3400},
+            "holiday": {"9:00": 2200, "11:00": 2200, "13:00": 2200, "15:00": 2200, "17:00": 2550, "18:30": 3400},
+        },
+    },
+    "seasonal": [
+        {"period": "17:00", "months": [3, 4, 5, 6, 7, 8, 9], "yen": 1650},
+        {"period": "15:00", "months": [11, 12], "yen": 2800},
+    ],
+}
 
 
 # ──────────────────────────────────────────
 # スクレイプ対象の設定（単一の真実）
-# 施設を増やすときは、まず backend/scrapers/fureai_net.py の FACILITY_NAV に
-# 施設・エリアを定義し、ここ FACILITIES に1エントリ追加する。
+# 施設を増やすときは、backend/scrapers/fureai_net.py の FACILITY_NAV に
+# 施設・エリアを定義し、ここ FACILITIES に1エントリ追加する（この2箇所のみ）。
+# Web のタブ・料金・時刻は facilities.json（本スクリプトが生成）経由で反映される。
 # output_filename は web/public/ 配下に出力され、Web の施設タブが読む。
 # ──────────────────────────────────────────
 @dataclass
@@ -87,11 +217,18 @@ class FacilityConfig:
     facility_name: str        # 表示名・通知見出し
     notify_emoji: str         # LINE通知の絵文字
     output_filename: str      # web/public/ 配下の出力ファイル名
-    short_area: dict = field(default_factory=dict)  # 通知用の短縮エリア名
+    web_id: str               # Web の施設タブ id（facilities.json に出力）
+    short_name: str           # Web タブの短縮表示名
+    short_area: dict = field(default_factory=dict)  # 通知・Web 表示の短縮エリア名
     scrape_enabled: bool = True  # False ならスクレイプ対象外（UI/料金のみ先行追加した施設）
     # data.json の periodOrder。体育館は午前/午後…、テニスは開始時刻スロット。
     period_order: list = field(default_factory=lambda: list(PERIOD_ORDER))
-    # 実行グループ。体育館は高頻度、テニスはコート数が多く重いので低頻度の別ワークフローで回す。
+    # 時間帯ラベル → 利用時刻（Web 表示用）。体育館は HALL_PERIOD_TIMES。
+    period_times: dict = field(default_factory=lambda: dict(HALL_PERIOD_TIMES))
+    # 料金定義（上記の形式）。None なら料金非表示。
+    prices: dict | None = None
+    # 実行グループ 兼 Web の表示カテゴリ（hall / tennis）。
+    # テニスはコート数が多く重いので低頻度の別ワークフローで回す。
     # 環境変数 SCRAPE_GROUP（hall / tennis / all）で対象を絞る。
     group: str = "hall"
 
@@ -104,108 +241,217 @@ class FacilityConfig:
         return f"{APP_URL}/{self.output_filename}"
 
 
+# 並び順は Web の施設タブ表示順（カテゴリ内で先頭がデフォルト選択）
 FACILITIES: list[FacilityConfig] = [
     FacilityConfig(
         facility_id="takatsu_sports_center",
         facility_name="高津スポーツセンター",
         notify_emoji="🏀",
         output_filename="data.json",
+        web_id="takatsu",
+        short_name="高津",
         short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
-    ),
-    FacilityConfig(
-        facility_id="culttz_kawasaki",
-        facility_name="カルッツかわさき",
-        notify_emoji="🏀",
-        output_filename="data-culttz.json",
-        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
-    ),
-    FacilityConfig(
-        facility_id="tama_sports_center",
-        facility_name="多摩スポーツセンター（体育館）",
-        notify_emoji="🏀",
-        output_filename="data-tama.json",
-        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
-    ),
-    FacilityConfig(
-        facility_id="asao_sports_center",
-        facility_name="麻生スポーツセンター",
-        notify_emoji="🏀",
-        output_filename="data-asao.json",
-        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
-    ),
-    FacilityConfig(
-        facility_id="saiwai_sports_center",
-        facility_name="幸スポーツセンター",
-        notify_emoji="🏀",
-        output_filename="data-saiwai.json",
-        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+        prices=SPORTS_CENTER_PRICE,
     ),
     FacilityConfig(
         facility_id="miyamae_sports_center",
         facility_name="宮前スポーツセンター",
         notify_emoji="🏀",
         output_filename="data-miyamae.json",
+        web_id="miyamae",
+        short_name="宮前",
         short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+        prices=SPORTS_CENTER_PRICE,
+    ),
+    FacilityConfig(
+        facility_id="saiwai_sports_center",
+        facility_name="幸スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data-saiwai.json",
+        web_id="saiwai",
+        short_name="幸",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+        prices=SPORTS_CENTER_PRICE,
+    ),
+    FacilityConfig(
+        facility_id="asao_sports_center",
+        facility_name="麻生スポーツセンター",
+        notify_emoji="🏀",
+        output_filename="data-asao.json",
+        web_id="asao",
+        short_name="麻生",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+        prices=SPORTS_CENTER_PRICE,
+    ),
+    FacilityConfig(
+        facility_id="tama_sports_center",
+        facility_name="多摩スポーツセンター（体育館）",
+        notify_emoji="🏀",
+        output_filename="data-tama.json",
+        web_id="tama",
+        short_name="多摩",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ"},
+        prices=SPORTS_CENTER_PRICE,
+    ),
+    FacilityConfig(
+        facility_id="culttz_kawasaki",
+        facility_name="カルッツかわさき",
+        notify_emoji="🏀",
+        output_filename="data-culttz.json",
+        web_id="culttz",
+        short_name="カルッツ",
+        short_area={"大体育室半面Ａ": "半面Ａ", "大体育室半面Ｂ": "半面Ｂ", "小体育室": "小"},
+        prices=CULTTZ_PRICE,
     ),
     FacilityConfig(
         facility_id="kawasaki_civic_plaza",
         facility_name="川崎市民プラザ",
         notify_emoji="🏟",
         output_filename="data-plaza.json",
+        web_id="plaza",
+        short_name="プラザ",
         short_area={"体育館": "体育館"},
+        prices=PLAZA_PRICE,
     ),
     FacilityConfig(
         facility_id="todoroki_arena",
         facility_name="とどろきアリーナ",
         notify_emoji="🏟",
         output_filename="data-todoroki.json",
+        web_id="todoroki",
+        short_name="とどろき",
         short_area={
             "メインアリーナ": "メイン",
             "サブアリーナ": "サブ",
         },
+        prices=TODOROKI_PRICE,
     ),
-    # 等々力テニスコート：時間貸し型でふれあいネットのページ形式が別。
-    # 専用パーサ未実装のため当面スクレイプ対象外（UI/料金/タブのみ先行）。
+    # 等々力テニスコート（時間貸し型・10面）
     FacilityConfig(
         facility_id="todoroki_tennis",
         facility_name="等々力テニスコート",
         notify_emoji="🎾",
         output_filename="data-tennis.json",
+        web_id="tennis",
+        short_name="等々力",
         short_area={f"等々力テニス場{i}": str(i) for i in range(1, 11)},
         period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
+        period_times={
+            "9:00": "9:00〜12:00",
+            "12:00": "12:00〜14:00",
+            "14:00": "14:00〜16:00",
+            "16:00": "16:00〜18:30",
+            "18:30": "18:30〜20:30",
+        },
+        prices=_flat_price(
+            ["9:00", "12:00", "14:00", "16:00", "18:30"],
+            {"9:00": 2280, "12:00": 1520, "14:00": 1520, "16:00": 1900, "18:30": 1520},
+        ),
         group="tennis",
     ),
-    # 多摩スポーツセンター テニス場（時間貸し型・2面）
-    FacilityConfig(
-        facility_id="tama_tennis",
-        facility_name="多摩スポーツセンター（テニス）",
-        notify_emoji="🎾",
-        output_filename="data-tama-tennis.json",
-        short_area={"テニス場Ａ": "Ａ", "テニス場Ｂ": "Ｂ"},
-        period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
-        group="tennis",
-    ),
-    # 大師テニスコート：時間貸し型（4スロット・3面・フラット料金）
-    FacilityConfig(
-        facility_id="daishi_tennis",
-        facility_name="大師テニスコート",
-        notify_emoji="🎾",
-        output_filename="data-daishi.json",
-        short_area={f"大師テニス場{i}": str(i) for i in range(1, 4)},
-        period_order=["9:00", "12:00", "14:00", "16:00"],
-        group="tennis",
-    ),
-    # 富士見テニスコート：時間貸し型（6スロット・12面・季節別料金）
+    # 富士見テニスコート（時間貸し型・6スロット・12面・季節別料金）
     FacilityConfig(
         facility_id="fujimi_tennis",
         facility_name="富士見テニスコート",
         notify_emoji="🎾",
         output_filename="data-fujimi.json",
+        web_id="fujimi",
+        short_name="富士見",
         short_area={f"富士見テニス場{i}": str(i) for i in range(1, 13)},
         period_order=["9:00", "11:00", "13:00", "15:00", "17:00", "18:30"],
+        period_times={
+            "9:00": "9:00〜11:00",
+            "11:00": "11:00〜13:00",
+            "13:00": "13:00〜15:00",
+            "15:00": "15:00〜17:00",
+            "17:00": "17:00〜18:30",
+            "18:30": "18:30〜20:30",
+        },
+        prices=FUJIMI_PRICE,
+        group="tennis",
+    ),
+    # 大師テニスコート（時間貸し型・4スロット・3面・フラット料金）
+    FacilityConfig(
+        facility_id="daishi_tennis",
+        facility_name="大師テニスコート",
+        notify_emoji="🎾",
+        output_filename="data-daishi.json",
+        web_id="daishi",
+        short_name="大師",
+        short_area={f"大師テニス場{i}": str(i) for i in range(1, 4)},
+        period_order=["9:00", "12:00", "14:00", "16:00"],
+        period_times={
+            "9:00": "9:00〜11:00",
+            "12:00": "12:00〜14:00",
+            "14:00": "14:00〜16:00",
+            "16:00": "16:00〜18:00",
+        },
+        prices=_flat_price(["9:00", "12:00", "14:00", "16:00"], 1520),
+        group="tennis",
+    ),
+    # 多摩スポーツセンター テニス場（時間貸し型・2面・個人利用料金）
+    FacilityConfig(
+        facility_id="tama_tennis",
+        facility_name="多摩スポーツセンター（テニス）",
+        notify_emoji="🎾",
+        output_filename="data-tama-tennis.json",
+        web_id="tamatennis",
+        short_name="多摩",
+        short_area={"テニス場Ａ": "Ａ", "テニス場Ｂ": "Ｂ"},
+        period_order=["9:00", "12:00", "14:00", "16:00", "18:30"],
+        period_times={
+            "9:00": "9:00〜12:00",
+            "12:00": "12:00〜14:00",
+            "14:00": "14:00〜16:00",
+            "16:00": "16:00〜18:00",
+            "18:30": "18:30〜20:30",
+        },
+        prices=_flat_price(
+            ["9:00", "12:00", "14:00", "16:00", "18:30"],
+            {"9:00": 2700, "12:00": 1800, "14:00": 1800, "16:00": 1800, "18:30": 3720},
+        ),
         group="tennis",
     ),
 ]
+
+CATEGORIES = [
+    {"id": "hall", "label": "体育館"},
+    {"id": "tennis", "label": "テニス"},
+]
+
+
+def build_facilities_index() -> dict:
+    """フロントの施設タブ・料金・利用時刻の元データ（facilities.json）を組み立てる。"""
+    return {
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "categories": CATEGORIES,
+        "facilities": [
+            {
+                "id": cfg.web_id,
+                "name": cfg.facility_name,
+                "short": cfg.short_name,
+                "file": cfg.output_filename,
+                "cat": cfg.group,
+                "periodOrder": cfg.period_order,
+                "periodTimes": cfg.period_times,
+                "areaShort": cfg.short_area,
+                "prices": cfg.prices,
+            }
+            for cfg in FACILITIES
+        ],
+    }
+
+
+def write_facilities_index() -> Path:
+    """web/public/facilities.json を生成する（ビルドに含まれフロントが読む）。"""
+    path = ROOT / "web" / "public" / "facilities.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(build_facilities_index(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"[施設定義] facilities.json を生成 → {path}", flush=True)
+    return path
 
 
 def _run_async(coro):
@@ -273,6 +519,46 @@ def _area_ok(recs: list) -> bool:
     return known > 0
 
 
+def _unknown_raw_ratio(recs: list) -> tuple[float, list[str]]:
+    """status_raw が取れているのに unknown 判定になったレコードの割合と、
+    その生文字列サンプル（最大3種）を返す。map_status が知らない文言＝
+    ふれあいネットの文言変更・構造変化の兆候。"""
+    with_raw = [r for r in recs if r.get("status_raw")]
+    if not with_raw:
+        return 0.0, []
+    unk = [r["status_raw"] for r in with_raw if r.get("status") == "unknown"]
+    return len(unk) / len(with_raw), sorted(set(unk))[:3]
+
+
+def _validate_payload(payload: dict, area_names: list[str], period_order: list[str]) -> list[str]:
+    """書き込み前の最終スキーマ検証。フロントの Zod（schema.ts）と二重防御。
+    エラー行のリストを返す（空なら正常）。最大10件で打ち切り。"""
+    errors: list[str] = []
+    days = payload.get("days") or []
+    if not days:
+        errors.append("days が空")
+    for day in days:
+        if len(errors) >= 10:
+            break
+        date = day.get("date", "")
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+            errors.append(f"不正な日付: {date!r}")
+        if day.get("weekday") not in WEEKDAYS_JA:
+            errors.append(f"{date}: 不正な曜日 {day.get('weekday')!r}")
+        by_area = day.get("byArea") or {}
+        if set(by_area) != set(area_names):
+            errors.append(f"{date}: エリアキー不一致 {sorted(by_area)}")
+        for area, a in by_area.items():
+            if a.get("status") not in KNOWN_STATUSES:
+                errors.append(f"{date}/{area}: 不正な status {a.get('status')!r}")
+            for p, st in (a.get("periods") or {}).items():
+                if st not in KNOWN_STATUSES:
+                    errors.append(f"{date}/{area}/{p}: 不正な period status {st!r}")
+                if p not in period_order:
+                    errors.append(f"{date}/{area}: periodOrder に無いラベル {p!r}")
+    return errors[:10]
+
+
 def _build_payload(cfg: FacilityConfig, records: list[dict]) -> dict:
     """日別レコードを data.json の構造へ整形"""
     nav = FACILITY_NAV[cfg.facility_id]
@@ -304,6 +590,8 @@ def _build_payload(cfg: FacilityConfig, records: list[dict]) -> dict:
         days.append({
             "date": date,
             "weekday": WEEKDAYS_JA[d.weekday()],
+            # 祝日フラグ（土日は weekday で判定）。フロントの料金・フィルタ・日付色に使う。
+            "isHoliday": _is_jp_holiday(date),
             "byArea": by_area,
         })
 
@@ -337,6 +625,17 @@ def _overlay_previous(payload: dict, previous: dict | None, areas: list[str]) ->
 # 空き通知（前回=公開中の data.json と差分を取り、新着のみ通知）
 # ──────────────────────────────────────────
 
+def _is_jp_holiday(date_str: str) -> bool:
+    """日本の祝日なら True（土日は含まない）。jpholiday が無い環境では常に False。"""
+    if jpholiday is None:
+        return False
+    try:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return False
+    return bool(jpholiday.is_holiday(d))
+
+
 def _is_weekend_or_holiday(date_str: str) -> bool:
     """土日または日本の祝日なら True。LINE通知の対象判定に使う。
     jpholiday が無い環境では土日のみを対象にフォールバックする。"""
@@ -346,9 +645,7 @@ def _is_weekend_or_holiday(date_str: str) -> bool:
         return False
     if d.weekday() >= 5:  # 月=0 … 土=5・日=6
         return True
-    if jpholiday is not None:
-        return bool(jpholiday.is_holiday(d))
-    return False
+    return _is_jp_holiday(date_str)
 
 
 def _is_evening_label(label: str) -> bool:
@@ -448,7 +745,8 @@ def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, remov
     else:
         lines.append("・現在、予約できる枠はありません")
     lines.append("")
-    lines.append(f"▶ {APP_URL}")
+    # 通知タップで該当施設のタブが開くよう ?f= を付ける
+    lines.append(f"▶ {APP_URL}/?f={cfg.web_id}")
     return "\n".join(lines)[:1900]
 
 
@@ -474,6 +772,7 @@ def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict)
         )
         urllib.request.urlopen(req, timeout=15)
         print(f"[通知] LINE送信OK（{grouped_count}件）", flush=True)
+        _check_line_quota(token)
     except Exception as e:
         body = ""
         if isinstance(e, urllib.error.HTTPError):
@@ -482,6 +781,31 @@ def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict)
             except Exception:
                 pass
         print(f"[通知] LINE送信失敗: {e} {body}", flush=True)
+
+
+def _check_line_quota(token: str) -> None:
+    """LINE Messaging API の月間送信数を照会し、無料枠の90%以上を消費していたら
+    管理者へ警告する（超過すると利用者への通知が止まるため、その前に気づく）。
+    broadcast は友だち数×1通で消費されるため、実測値の照会が唯一正確。"""
+    try:
+        def _get(url: str) -> dict:
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+            with urllib.request.urlopen(req, timeout=15) as res:
+                return json.loads(res.read().decode("utf-8"))
+
+        quota = _get(LINE_QUOTA_URL)
+        if quota.get("type") != "limited":
+            return  # 従量プラン等、上限なし
+        limit = int(quota.get("value") or 0)
+        usage = int(_get(LINE_QUOTA_CONSUMPTION_URL).get("totalUsage") or 0)
+        print(f"[通知] LINE送信数: 今月 {usage}/{limit} 通", flush=True)
+        if limit and usage >= limit * 0.9:
+            _notify_admin(
+                f"LINE無料枠が残りわずか（今月 {usage}/{limit} 通）。"
+                "超過すると利用者への通知が届かなくなります"
+            )
+    except Exception as e:
+        print(f"[通知] LINE送信数の確認失敗: {e}", flush=True)
 
 
 def _notify_admin(reason: str) -> None:
@@ -555,6 +879,15 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
         _notify_admin(f"{cfg.facility_name}: 全エリア取得失敗（メンテ移行 or サイト構造変化の可能性）")
         return False
 
+    # 文言変更の早期検知：生文字列があるのに unknown 判定が多いエリアは構造変化の疑い
+    for a in ok_areas:
+        ratio, samples = _unknown_raw_ratio(by_area[a])
+        if ratio >= UNKNOWN_ALERT_RATIO:
+            _notify_admin(
+                f"{cfg.facility_name}/{a}: 未知のステータス文言が{ratio:.0%}"
+                f"（例: {samples}）。ふれあいネットの文言変更の可能性"
+            )
+
     records = [r for a in ok_areas for r in by_area[a]]
     payload = _build_payload(cfg, records)
 
@@ -567,6 +900,13 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     n_days = len(payload["days"])
     if n_days == 0:
         print(f"[{cfg.facility_name}][警告] 取得0日。{cfg.output_filename} は更新せずスキップ", flush=True)
+        return False
+
+    # 書き込み前の最終スキーマ検証（壊れた JSON をデプロイしない最後の砦）
+    schema_errors = _validate_payload(payload, area_names, cfg.period_order)
+    if schema_errors:
+        print(f"[{cfg.facility_name}][警告] スキーマ検証エラーのため更新スキップ: {schema_errors}", flush=True)
+        _notify_admin(f"{cfg.facility_name}: data検証エラーで更新スキップ {schema_errors[:3]}")
         return False
 
     cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -608,6 +948,9 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
 
 def main() -> int:
     print(f"=== ふれあいネット 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
+
+    # 施設タブ・料金・時刻のメタをフロントへ渡す（毎回生成＝FACILITIES が単一の真実）
+    write_facilities_index()
 
     # 実行グループで対象を絞る（hall=体育館を高頻度 / tennis=テニスを低頻度の別ワークフロー）
     group = os.getenv("SCRAPE_GROUP", "all").strip().lower()

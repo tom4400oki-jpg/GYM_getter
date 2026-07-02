@@ -99,7 +99,7 @@ FACILITY_NAV = {
         "building": "等々力テニスコート",
         "has_lottery": True,
         # 時間貸し型（開始時刻スロット）。既存の時間帯貸しパーサとは別実装が必要なため、
-        # スクレイパーは未対応（scrape_takatsu.py 側で scrape_enabled=False）。
+        # スクレイパーは未対応（scrape_fureai.py 側で scrape_enabled=False）。
         # 実ページの HTML を確認してから専用パーサ＋ナビを実装する。
         "areas": [
             {"name": f"等々力テニス場{i}", "index": i - 1} for i in range(1, 11)
@@ -128,7 +128,7 @@ FACILITY_NAV = {
         "region": "川崎区",
         "building": "富士見テニスコート",
         "has_lottery": True,
-        # 時間貸し型（6スロット）。専用パーサ未実装のため scrape_takatsu.py で scrape_enabled=False。
+        # 時間貸し型（6スロット）。専用パーサ未実装のため scrape_fureai.py で scrape_enabled=False。
         "areas": [
             {"name": f"富士見テニス場{i}", "index": i - 1} for i in range(1, 13)
         ],

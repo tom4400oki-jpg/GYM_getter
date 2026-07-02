@@ -23,8 +23,9 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  // data 系 JSON（data.json / data-*.json）は鮮度最優先で常にネットワーク（キャッシュしない）
-  if (/\/data(-[\w-]+)?\.json$/.test(url.pathname)) return;
+  // data 系 JSON（data.json / data-*.json / facilities.json）は
+  // 鮮度最優先で常にネットワーク（キャッシュしない）
+  if (/\/(data(-[\w-]+)?|facilities)\.json$/.test(url.pathname)) return;
   // 別オリジン（ふれあいネット等）は介入しない
   if (url.origin !== self.location.origin) return;
 

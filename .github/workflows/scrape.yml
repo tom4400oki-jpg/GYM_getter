@@ -42,6 +42,12 @@ jobs:
           pip install -r requirements-scrape.txt
           python -m playwright install --with-deps chromium
 
+      # スクレイプ前に純粋関数の単体テストを回す（数秒。壊れたロジックでの本番実行を防ぐ）
+      - name: 単体テスト
+        run: |
+          pip install pytest
+          python -m pytest tests/ -q
+
       - name: 空き状況スクレイプ
         id: scrape
         env:
@@ -58,7 +64,7 @@ jobs:
           SCRAPE_GROUP: "hall"
           # 手動実行で force_deploy を指定した時のみ true。データ無変化でもデプロイする。
           FORCE_DEPLOY: ${{ inputs.force_deploy }}
-        run: python scripts/scrape_takatsu.py
+        run: python scripts/scrape_fureai.py
 
       - name: Node セットアップ
         uses: actions/setup-node@v4

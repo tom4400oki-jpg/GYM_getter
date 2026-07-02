@@ -10,6 +10,8 @@ export const areaStatusSchema = z.object({
 export const daySchema = z.object({
   date: z.string(),
   weekday: z.string(),
+  // 日本の祝日（土日は weekday で判定）。旧データには無いので既定 false
+  isHoliday: z.boolean().default(false),
   byArea: z.record(z.string(), areaStatusSchema),
 });
 
@@ -42,4 +44,28 @@ export type AreaStatus = z.infer<typeof areaStatusSchema>;
 /** 予約で取れる（予約可能）とみなすステータス */
 export function isReservable(status: string): boolean {
   return status === "available" || status === "partial";
+}
+
+/** 土日または祝日か（休日料金・土日祝フィルタの判定） */
+export function isWeekendOrHoliday(day: DayData): boolean {
+  return day.weekday === "土" || day.weekday === "日" || day.isHoliday;
+}
+
+export function dayHasReservable(day: DayData): boolean {
+  return Object.values(day.byArea).some((a) => isReservable(a.status));
+}
+
+/** 18時以降に始まる枠か（体育館『夜間』18:30〜／テニスは時刻表記'18:30'等） */
+export function isEveningPeriod(label: string): boolean {
+  if (label === "夜間") return true;
+  const m = /^(\d{1,2}):/.exec(label);
+  return m ? Number(m[1]) >= 18 : false;
+}
+
+export function dayHasEveningReservable(day: DayData): boolean {
+  return Object.values(day.byArea).some((a) =>
+    Object.entries(a.periods ?? {}).some(
+      ([p, st]) => isEveningPeriod(p) && isReservable(st)
+    )
+  );
 }
