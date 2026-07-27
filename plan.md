@@ -213,3 +213,10 @@ GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
   - **スクレイパー未対応**: `FacilityConfig.scrape_enabled=False` で取得対象から除外（失敗アラート防止）。`data-tennis.json` は空プレースホルダ。
   - **TODO（要HTML）**: 実ページ（コート選択→日付→スロットグリッド）のHTMLを入手後、(1) テニス用ナビ＋スロットグリッドのパーサ実装、(2) `scrape_enabled=True` に。UI/料金/転置レイアウトは実装済みなのでパーサが `periods={"9:00":..,"12:00":..}` を埋めれば表示される。
     任意で Secret `LINE_ADMIN_USER_ID` を登録すると管理者へ LINE push 通知が届く。
+
+## LINE内ブラウザ対応（2026-07-27）
+- グローバルルール適用。`web/src/main.tsx` で LINE の UA（` Line/`）を検知したら
+  `?openExternalBrowser=1` を付けて `location.replace` し、外部ブラウザで開き直させる
+  （付与済みなら何もせず無限ループを防止）
+- URLを共有・コピーする箇所は無いため、パラメータ付与の対応は不要
+- 検証: tsc 0
