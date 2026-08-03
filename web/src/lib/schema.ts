@@ -26,9 +26,9 @@ export const dataSchema = z.object({
   days: z.array(daySchema),
 });
 
-/** ふれあいネット予約ページのフォールバックURL */
+/** ふれあいネット予約ページ（高機能版）のフォールバックURL */
 export const FALLBACK_RESERVE_URL =
-  "https://www.fureai-net.city.kawasaki.jp/web/";
+  "https://www.fureai-net.city.kawasaki.jp/user/view/user/homeIndex.html";
 
 /** updatedAt が古い（既定3時間超）かどうか。サイレント故障の利用者向けセーフティネット */
 export function isStale(iso: string, maxAgeMs = 3 * 60 * 60 * 1000): boolean {

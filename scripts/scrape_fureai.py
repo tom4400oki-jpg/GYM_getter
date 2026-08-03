@@ -68,8 +68,8 @@ PERIOD_ORDER = ["午前", "午後1", "午後2", "夜間"]
 RESERVABLE = ("available", "partial")  # 予約可能とみなす
 
 APP_URL = "https://gym-getter.web.app"
-# 予約申込みページ（施設トップではなく予約導線へ寄せる）
-RESERVE_URL = "https://www.fureai-net.city.kawasaki.jp/web/"
+# 予約申込みページ（簡易版ではなく高機能版）
+RESERVE_URL = "https://www.fureai-net.city.kawasaki.jp/user/view/user/homeIndex.html"
 
 LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast"
 LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"

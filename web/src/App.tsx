@@ -393,7 +393,7 @@ export default function App() {
       <p className="mt-3 px-1 text-[10px] leading-relaxed text-slate-400">
         ふれあいネットの予約空き状況を自動取得。○△が予約で取れる枠です。実際の予約は
         <a
-          href="https://www.fureai-net.city.kawasaki.jp/web/"
+          href={FALLBACK_RESERVE_URL}
           target="_blank"
           rel="noreferrer"
           className="text-sky-500 underline"
