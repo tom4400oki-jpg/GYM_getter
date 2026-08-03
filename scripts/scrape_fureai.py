@@ -76,6 +76,14 @@ LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
 LINE_QUOTA_URL = "https://api.line.me/v2/bot/message/quota"
 LINE_QUOTA_CONSUMPTION_URL = "https://api.line.me/v2/bot/message/quota/consumption"
 
+# LINEのテキスト上限5000字に対する安全マージン
+LINE_TEXT_LIMIT = 4800
+# 1施設あたりの枠行数の上限（超過分は「…他N件」に畳む）
+LINE_MAX_LINES_PER_FACILITY = 12
+
+# 変化のあった施設を溜めて実行の最後に1通だけ送るためのキュー
+_PENDING_NOTIFY: list[tuple] = []
+
 # map_status が返しうる全ステータス（web/src/lib/schema.ts の Zod enum と対）
 KNOWN_STATUSES = {
     "available", "partial", "open", "occupied", "closed",
@@ -728,10 +736,12 @@ def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
     return out
 
 
-def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> str:
-    """現在予約できる枠を全て日付順に並べた通知メッセージに整形する。
-    変化（新たに空いた／埋まった）の件数をサマリとして添える。"""
-    lines = [f"{cfg.notify_emoji} {cfg.facility_name} 予約できる枠（土日祝＋平日夜間）"]
+def _build_facility_section(
+    cfg: FacilityConfig, current: dict, added: dict, removed: dict, max_lines: int
+) -> list[str]:
+    """1施設分の通知セクションを行リストで返す。
+    max_lines を超える枠行は「…他N件」に畳んで全体の文字数を抑える。"""
+    lines = [f"{cfg.notify_emoji} {cfg.facility_name}"]
     summary = []
     if added:
         summary.append(f"新たに{len(added)}枠")
@@ -739,27 +749,54 @@ def _build_notify_message(cfg: FacilityConfig, current: dict, added: dict, remov
         summary.append(f"埋まり{len(removed)}枠")
     if summary:
         lines.append("（" + " / ".join(summary) + "）")
-    lines.append("")
     if current:
-        lines += _format_keys(cfg, current)
+        rows = _format_keys(cfg, current)
+        if len(rows) > max_lines:
+            rows = rows[:max_lines] + [f"・…他{len(rows) - max_lines}件"]
+        lines += rows
     else:
         lines.append("・現在、予約できる枠はありません")
-    lines.append("")
     # 通知タップで該当施設のタブが開くよう ?f= を付ける
     lines.append(f"▶ {APP_URL}/?f={cfg.web_id}")
-    return "\n".join(lines)[:1900]
+    return lines
 
 
-def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> None:
-    """現在予約できる枠の一覧を LINE（Messaging API ブロードキャスト）で通知する。
-    LINE公式アカウントを友だち追加したメンバー全員に届く。"""
+def _build_combined_message(entries: list) -> str:
+    """変化のあった全施設を1通分のテキストに連結する。
+    上限に収まらない場合は施設ごとの枠行を段階的に畳んで収める。"""
+    head = f"🔔 空き枠の変化（{len(entries)}施設 / 土日祝＋平日夜間）"
+    text = ""
+    for max_lines in (LINE_MAX_LINES_PER_FACILITY, 6, 3, 1):
+        blocks = [
+            "\n".join(_build_facility_section(cfg, cur, add, rem, max_lines))
+            for cfg, cur, add, rem in entries
+        ]
+        text = head + "\n\n" + "\n\n".join(blocks)
+        if len(text) <= LINE_TEXT_LIMIT:
+            return text
+    return text[:LINE_TEXT_LIMIT]
+
+
+def _queue_notify(cfg: FacilityConfig, current: dict, added: dict, removed: dict) -> None:
+    """変化のあった施設を通知キューに積む。送信は _flush_notify() が1通にまとめて行う。"""
+    _PENDING_NOTIFY.append((cfg, current, added, removed))
+
+
+def _flush_notify() -> None:
+    """キューに積まれた全施設の変化を LINE へ1通だけブロードキャストする。
+    施設ごとに送ると最大12通/実行になり、無料枠（200通/月・友だち数×通数で消費）を
+    すぐ使い切るため、1回の実行につき必ず1通へ集約する。"""
+    if not _PENDING_NOTIFY:
+        return
+
     token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
     if not token:
         print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
+        _PENDING_NOTIFY.clear()
         return
 
-    content = _build_notify_message(cfg, current, added, removed)
-    grouped_count = len({(d, a) for (d, a, _l) in current})
+    content = _build_combined_message(_PENDING_NOTIFY)
+    names = "／".join(cfg.facility_name for cfg, _c, _a, _r in _PENDING_NOTIFY)
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
@@ -771,7 +808,10 @@ def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict)
             },
         )
         urllib.request.urlopen(req, timeout=15)
-        print(f"[通知] LINE送信OK（{grouped_count}件）", flush=True)
+        print(
+            f"[通知] LINE送信OK（1通に集約 / {len(_PENDING_NOTIFY)}施設: {names} / {len(content)}字）",
+            flush=True,
+        )
         _check_line_quota(token)
     except Exception as e:
         body = ""
@@ -781,6 +821,8 @@ def _notify_line(cfg: FacilityConfig, current: dict, added: dict, removed: dict)
             except Exception:
                 pass
         print(f"[通知] LINE送信失敗: {e} {body}", flush=True)
+    finally:
+        _PENDING_NOTIFY.clear()
 
 
 def _check_line_quota(token: str) -> None:
@@ -940,7 +982,7 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
                 f"現在の通知対象枠{len(new_now)}件を通知",
                 flush=True,
             )
-            _notify_line(cfg, new_now, added, removed)
+            _queue_notify(cfg, new_now, added, removed)
         else:
             print(f"[{cfg.facility_name}][通知] 通知対象に変化なし", flush=True)
     return True
@@ -1007,6 +1049,9 @@ def main() -> int:
     for cfg in targets:
         if _process_facility(cfg, collected.get(cfg.facility_id, {}), previous_map[cfg.facility_id]):
             any_deploy = True
+
+    # 施設ごとに送らず、この実行で変化のあった全施設を1通にまとめて送る。
+    _flush_notify()
 
     # web 側のソース変更のみを反映したい場合は、データ無変化でも強制デプロイする。
     if force and not any_deploy:

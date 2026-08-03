@@ -7,7 +7,7 @@
 
 ## 現行アーキテクチャ（本番稼働中）
 ```
-GitHub Actions (cron 90分ごと=1日16回 + 手動 workflow_dispatch)
+GitHub Actions (cron 1日8回 JST 7〜21時の2時間ごと + 手動 workflow_dispatch)
   ├─ scripts/scrape_fureai.py  (Playwright / 複数施設を1ログインで順次取得)
   │     ├─ web/public/data.json（高津）・data-plaza.json（市民プラザ）を生成
   │     └─ 施設ごとに公開中 data と差分を取り、空き/埋まりの変化時に「現在の全空き枠を日付順」でLINE通知（施設名付き・ブロードキャスト）
