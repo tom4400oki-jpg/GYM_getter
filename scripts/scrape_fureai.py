@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import json
+import time
 import asyncio
 import urllib.request
 import urllib.error
@@ -428,6 +429,24 @@ CATEGORIES = [
 ]
 
 
+def atomic_write_json(path: Path, data: dict) -> None:
+    """一時ファイルに書き込んでからアトミックにリネーム置換することで、
+    プロセス中断等によるファイル破損を防ぐ。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(f"{path.suffix}.tmp.{os.getpid()}")
+    try:
+        tmp_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        os.replace(tmp_path, path)
+    finally:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+
+
 def build_facilities_index() -> dict:
     """フロントの施設タブ・料金・利用時刻の元データ（facilities.json）を組み立てる。"""
     return {
@@ -453,11 +472,7 @@ def build_facilities_index() -> dict:
 def write_facilities_index() -> Path:
     """web/public/facilities.json を生成する（ビルドに含まれフロントが読む）。"""
     path = ROOT / "web" / "public" / "facilities.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(build_facilities_index(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, build_facilities_index())
     print(f"[施設定義] facilities.json を生成 → {path}", flush=True)
     return path
 
@@ -545,18 +560,39 @@ def _validate_payload(payload: dict, area_names: list[str], period_order: list[s
     days = payload.get("days") or []
     if not days:
         errors.append("days が空")
+
+    if "updatedAt" in payload:
+        updated_at = payload.get("updatedAt", "")
+        try:
+            datetime.fromisoformat(str(updated_at).replace("Z", "+00:00"))
+        except (ValueError, TypeError, AttributeError):
+            errors.append(f"不正な updatedAt: {updated_at!r}")
+
     for day in days:
         if len(errors) >= 10:
             break
         date = day.get("date", "")
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
             errors.append(f"不正な日付: {date!r}")
-        if day.get("weekday") not in WEEKDAYS_JA:
-            errors.append(f"{date}: 不正な曜日 {day.get('weekday')!r}")
+            continue
+        try:
+            d = datetime.strptime(date, "%Y-%m-%d")
+            expected_wd = WEEKDAYS_JA[d.weekday()]
+            if day.get("weekday") != expected_wd:
+                errors.append(f"{date}: 不正な曜日 {day.get('weekday')!r} (期待値: {expected_wd})")
+        except ValueError:
+            errors.append(f"存在しない日付: {date!r}")
+
+        if not isinstance(day.get("isHoliday"), bool):
+            errors.append(f"{date}: isHoliday が真偽値でない ({type(day.get('isHoliday')).__name__})")
+
         by_area = day.get("byArea") or {}
         if set(by_area) != set(area_names):
             errors.append(f"{date}: エリアキー不一致 {sorted(by_area)}")
         for area, a in by_area.items():
+            if not isinstance(a, dict):
+                errors.append(f"{date}/{area}: エリアデータが辞書型でない")
+                continue
             if a.get("status") not in KNOWN_STATUSES:
                 errors.append(f"{date}/{area}: 不正な status {a.get('status')!r}")
             for p, st in (a.get("periods") or {}).items():
@@ -707,15 +743,52 @@ def _clean_secret(s: str) -> str:
     return s.replace("﻿", "").strip()
 
 
+def _http_request_with_retry(
+    req: urllib.request.Request, timeout: int = 15, max_retries: int = 3
+) -> bytes:
+    """urllib リクエストを指数バックオフ付きでリトライする。"""
+    last_err: Exception | None = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as res:
+                return res.read()
+        except urllib.error.HTTPError as e:
+            # 4xx（404等）は再試行しても無駄なため即時 raise
+            if 400 <= e.code < 500 and e.code != 429:
+                raise
+            last_err = e
+        except Exception as e:
+            last_err = e
+
+        if attempt < max_retries:
+            time.sleep(attempt * 1.5)
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("リクエストが完了しませんでした")
+
+
 def _fetch_previous(cfg: FacilityConfig) -> dict | None:
-    """公開中の data.json（前回結果）を取得。失敗時は None。"""
+    """公開中の data.json（前回結果）を取得。CDN障害時はローカル既存ファイルをフォールバックとする。"""
     try:
         req = urllib.request.Request(cfg.live_data_url, headers={"Cache-Control": "no-cache"})
-        with urllib.request.urlopen(req, timeout=15) as res:
-            return json.loads(res.read().decode("utf-8"))
+        data = _http_request_with_retry(req, timeout=15, max_retries=3)
+        return json.loads(data.decode("utf-8"))
     except Exception as e:
-        print(f"[通知] 前回データ取得不可（初回扱い）: {e}", flush=True)
-        return None
+        print(f"[通知] ライブデータ取得失敗 ({cfg.facility_name}): {e}", flush=True)
+
+    # CDN等から取得できない場合、ローカルに健全な既存ファイルがあればフォールバックとして採用
+    if cfg.output_path.exists():
+        try:
+            local_data = json.loads(cfg.output_path.read_text(encoding="utf-8"))
+            if local_data.get("days"):
+                print(f"[通知] ローカル既存ファイルを前回値として利用: {cfg.output_path}", flush=True)
+                return local_data
+        except Exception as le:
+            print(f"[通知] ローカル既存ファイルの読み込み失敗: {le}", flush=True)
+
+    print(f"[通知] {cfg.facility_name} 前回データ取得不可（初回扱い）", flush=True)
+    return None
 
 
 def _format_keys(cfg: FacilityConfig, keys: dict) -> list:
@@ -807,7 +880,7 @@ def _flush_notify() -> None:
                 "Authorization": f"Bearer {token}",
             },
         )
-        urllib.request.urlopen(req, timeout=15)
+        _http_request_with_retry(req, timeout=15, max_retries=2)
         print(
             f"[通知] LINE送信OK（1通に集約 / {len(_PENDING_NOTIFY)}施設: {names} / {len(content)}字）",
             flush=True,
@@ -832,8 +905,8 @@ def _check_line_quota(token: str) -> None:
     try:
         def _get(url: str) -> dict:
             req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
-            with urllib.request.urlopen(req, timeout=15) as res:
-                return json.loads(res.read().decode("utf-8"))
+            data = _http_request_with_retry(req, timeout=15, max_retries=2)
+            return json.loads(data.decode("utf-8"))
 
         quota = _get(LINE_QUOTA_URL)
         if quota.get("type") != "limited":
@@ -875,7 +948,7 @@ def _notify_admin(reason: str) -> None:
                 "Authorization": f"Bearer {token}",
             },
         )
-        urllib.request.urlopen(req, timeout=15)
+        _http_request_with_retry(req, timeout=15, max_retries=2)
         print("[管理者通知] LINE push OK", flush=True)
     except Exception as e:
         print(f"[管理者通知] LINE push 失敗: {e}", flush=True)
@@ -951,8 +1024,7 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
         _notify_admin(f"{cfg.facility_name}: data検証エラーで更新スキップ {schema_errors[:3]}")
         return False
 
-    cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
-    cfg.output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    atomic_write_json(cfg.output_path, payload)
 
     n_reservable = sum(
         1
@@ -1008,10 +1080,7 @@ def main() -> int:
     for cfg in non_targets:
         live = _fetch_previous(cfg)
         if live and live.get("days"):
-            cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
-            cfg.output_path.write_text(
-                json.dumps(live, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+            atomic_write_json(cfg.output_path, live)
 
     # 通知用に前回（公開中）データを施設ごとに先取得
     previous_map = {cfg.facility_id: _fetch_previous(cfg) for cfg in targets}
@@ -1030,10 +1099,7 @@ def main() -> int:
                 for cfg in targets:
                     live = previous_map.get(cfg.facility_id)
                     if live and live.get("days"):
-                        cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
-                        cfg.output_path.write_text(
-                            json.dumps(live, ensure_ascii=False, indent=2), encoding="utf-8"
-                        )
+                        atomic_write_json(cfg.output_path, live)
                 print("[メンテ] FORCE_DEPLOY 指定：ライブデータを書き戻してデプロイします", flush=True)
                 _set_output("deploy", "true")
                 return 0

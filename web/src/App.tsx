@@ -22,21 +22,27 @@ import {
 import DayRow from "@/components/DayRow";
 import AllSummary from "@/components/AllSummary";
 
+import { z } from "zod";
+
 // 「すべて」（カテゴリ横断サマリ）の擬似施設ID
 const ALL_ID = "all";
 const STORAGE_KEY = "gym-getter:view";
 
-type SavedView = {
-  facilityId?: string;
-  category?: Category;
-  onlyReservable?: boolean;
-  onlyWeekend?: boolean;
-  onlyEvening?: boolean;
-};
+const savedViewSchema = z.object({
+  facilityId: z.string().optional(),
+  category: z.enum(["hall", "tennis"]).optional(),
+  onlyReservable: z.boolean().optional(),
+  onlyWeekend: z.boolean().optional(),
+  onlyEvening: z.boolean().optional(),
+});
+type SavedView = z.infer<typeof savedViewSchema>;
 
 function loadSavedView(): SavedView {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as SavedView;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = savedViewSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : {};
   } catch {
     return {};
   }
@@ -124,29 +130,40 @@ export default function App() {
     window.history.replaceState(null, "", `?${q.toString()}`);
   }, [facilityId, category, onlyReservable, onlyWeekend, onlyEvening]);
 
-  async function load(target: FacilityMeta | undefined = fac) {
-    if (!target) return;
+  async function loadData(target: FacilityMeta, signal?: AbortSignal) {
     setLoading(true);
     setError(null);
     setData(null);
     try {
-      const res = await fetch(`/${target.file}?t=${Date.now()}`, { cache: "no-store" });
+      const res = await fetch(`/${target.file}?t=${Date.now()}`, {
+        cache: "no-store",
+        signal,
+      });
       if (!res.ok) throw new Error(`データ取得に失敗しました (${res.status})`);
       const json = await res.json();
       setData(dataSchema.parse(json));
     } catch (e) {
+      if (signal?.aborted) return;
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     if (!facilityId || isAll) return;
-    load(facilities.find((f) => f.id === facilityId));
+    const target = facilities.find((f) => f.id === facilityId);
+    if (!target) return;
+    const controller = new AbortController();
+    loadData(target, controller.signal);
     setExpanded(new Set());
+    return () => {
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facilityId]);
+  }, [facilityId, isAll, facilities]);
 
   const days = useMemo(() => {
     if (!data) return [];
@@ -203,7 +220,8 @@ export default function App() {
       </div>
     );
   }
-  if (!index || (!isAll && !fac)) {
+  const currentFac = !isAll ? fac : undefined;
+  if (!index || (!isAll && !currentFac)) {
     return <p className="py-8 text-center text-xs text-slate-400">読み込み中…</p>;
   }
 
@@ -214,7 +232,7 @@ export default function App() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <h1 className="text-sm font-bold leading-tight">
-              {isAll ? `${catLabel} 全施設まとめ` : data?.facility ?? fac!.name}
+              {isAll ? `${catLabel} 全施設まとめ` : data?.facility ?? currentFac?.name ?? ""}
             </h1>
             <p className="text-[11px] text-slate-500">
               予約空き状況
@@ -241,9 +259,9 @@ export default function App() {
               <ExternalLink className="h-3 w-3" />
               予約する
             </a>
-            {!isAll && (
+            {currentFac && (
               <button
-                onClick={() => load()}
+                onClick={() => loadData(currentFac)}
                 className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 active:bg-slate-100"
               >
                 <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
@@ -348,7 +366,7 @@ export default function App() {
         <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
       )}
 
-      {!isAll && data && (
+      {!isAll && currentFac && data && (
         <>
           {/* エリア見出し */}
           <div
@@ -361,7 +379,7 @@ export default function App() {
             ) : (
               areas.map((a) => (
                 <div key={a} className="bg-slate-100 px-1 py-1" title={a}>
-                  {shortArea(fac!, a)}
+                  {shortArea(currentFac, a)}
                 </div>
               ))
             )}
@@ -378,7 +396,7 @@ export default function App() {
               <DayRow
                 key={day.date}
                 day={day}
-                fac={fac!}
+                fac={currentFac}
                 areas={areas}
                 periodOrder={periodOrder}
                 isOpen={expanded.has(day.date)}

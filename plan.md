@@ -228,3 +228,18 @@ GitHub Actions (cron 1日8回 JST 7〜21時の2時間ごと + 手動 workflow_di
   （付与済みなら何もせず無限ループを防止）
 - URLを共有・コピーする箇所は無いため、パラメータ付与の対応は不要
 - 検証: tsc 0
+
+## Phase 8: 全体的安定性ハードニング（2026-10-03 完了）
+- **ブラウザ基盤 (`base.py`)**: Chromium 起動引数に `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu` を追加し、Ubuntu/Linux 環境でのメモリクラッシュ・`/dev/shm` 枯渇を抑制。`__aenter__` / `__aexit__` を `try...finally` で保護しプロセス残留を防止。
+- **スクレイパー復帰ガード (`fureai_net.py`)**: 時間帯詳細から月間カレンダーへの復帰成否およびカレンダー再抽出を検証。ナビゲーション失敗時に例外クラッシュせず安全に中断して取得済みデータを保持。
+- **アトミック書き込み (`scrape_fureai.py`)**: 一時ファイル経由リネーム置換（`atomic_write_json`）に全面統一し、プロセス中断による中途半端な破損 JSON の本番デプロイを物理的に防止。
+- **HTTP/LINE 通信リトライ (`scrape_fureai.py`)**: `_http_request_with_retry`（指数バックオフ付き最大3回リトライ）を導入。CDN障害時はローカル既存ファイルをセーフティネットとして読み込み、全枠新着誤爆通知を防止。LINE broadcast / push / quota もリトライ対応。
+- **スキーマバリデーション強化 (`scrape_fureai.py`)**: `updatedAt` の ISO 形式検証、日付と曜日の実カレンダー照合、`isHoliday` 真偽値検証、エリア辞書型検証を追加。
+- **デプロイ検証の堅牢化 (`scrape.yml`, `scrape-tennis.yml`)**: 特定施設の取得成否に影響されないよう、毎実行必ず新タイムスタンプで生成される `facilities.json` の `updatedAt` を検証対象に変更（特定施設取得失敗時のデプロイ検証ミス＝偽陰性を完全排除）。ポーリングを最大10回（100秒）に拡大、Node.js 22 LTS 固定。
+- **フロントエンド型安全性・非同期競合防止 (`web/`)**:
+  - `as SavedView` や `as Row` 等の型キャスト（`as Type`）を完全排除し、Zod `savedViewSchema` や型注釈に置換。
+  - `schema.ts` の `reserveUrl`、`facilities.ts` の `prices` を `.nullish()` に変更し、null 値によるランタイム例外を防止。
+  - `App.tsx` の Non-null assertion (`!`) を安全なナローイングに置換。
+  - タブ連続切り替え時の非同期競合状態（Race condition）を `AbortController` によるキャンセルで防止。
+  - LINE アプリ内ブラウザ判定リダイレクトで `URL` Web API を使用しパラメータ付与を堅牢化。
+- 検証: pytest 21件全通過、`npm run build`（tsc -b + vite build）成功、エラー0。

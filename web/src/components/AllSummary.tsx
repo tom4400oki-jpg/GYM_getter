@@ -74,11 +74,17 @@ export default function AllSummary({
         if (!data) continue;
         for (const day of data.days) {
           if (!dayHasReservable(day)) continue;
-          const row =
-            byDate.get(day.date) ??
-            ({ date: day.date, weekday: day.weekday, isHoliday: day.isHoliday, hits: [] } as Row);
+          const existing = byDate.get(day.date);
+          const row: Row = existing ?? {
+            date: day.date,
+            weekday: day.weekday,
+            isHoliday: day.isHoliday,
+            hits: [],
+          };
           row.hits.push({ fac, day, slots: reservableSlots(day) });
-          byDate.set(day.date, row);
+          if (!existing) {
+            byDate.set(day.date, row);
+          }
         }
       }
       setRows([...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)));

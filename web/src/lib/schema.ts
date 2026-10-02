@@ -18,8 +18,8 @@ export const daySchema = z.object({
 export const dataSchema = z.object({
   facility: z.string(),
   bookingType: z.string(),
-  // ふれあいネットの予約導線URL（旧データには無いので任意）
-  reserveUrl: z.string().url().optional(),
+  // ふれあいネットの予約導線URL（旧データには無いので任意、nullも許容）
+  reserveUrl: z.string().url().nullish(),
   updatedAt: z.string(),
   areas: z.array(z.string()),
   periodOrder: z.array(z.string()).default(["午前", "午後1", "午後2", "夜間"]),

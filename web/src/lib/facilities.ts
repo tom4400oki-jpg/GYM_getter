@@ -30,7 +30,7 @@ export const facilityMetaSchema = z.object({
   periodOrder: z.array(z.string()),
   periodTimes: z.record(z.string(), z.string()).default({}),
   areaShort: z.record(z.string(), z.string()).default({}),
-  prices: priceSchema.nullable().optional(),
+  prices: priceSchema.nullish(),
 });
 
 export const facilitiesIndexSchema = z.object({

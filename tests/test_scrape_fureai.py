@@ -174,3 +174,67 @@ def test_is_evening_label():
     assert st._is_evening_label("18:30") is True
     assert st._is_evening_label("16:00") is False
     assert st._is_evening_label("午前") is False
+
+
+# ── 安定性強化テスト ────────────────────────
+def test_atomic_write_json_creates_valid_file(tmp_path):
+    target = tmp_path / "test_data.json"
+    data = {"status": "ok", "count": 42}
+    st.atomic_write_json(target, data)
+    assert target.exists()
+    import json
+    assert json.loads(target.read_text(encoding="utf-8")) == data
+    # 一時ファイルが残っていないこと
+    assert len(list(tmp_path.glob("*.tmp.*"))) == 0
+
+
+def test_validate_payload_rejects_bad_updated_at():
+    cfg = _cfg()
+    payload = st._build_payload(cfg, [_rec("2026-07-04", "大体育室半面Ａ", "occupied")])
+    payload["updatedAt"] = "invalid-date"
+    errors = st.validate_payload(payload, payload["areas"], cfg.period_order) if hasattr(st, "validate_payload") else st._validate_payload(payload, payload["areas"], cfg.period_order)
+    assert any("updatedAt" in e for e in errors)
+
+
+def test_validate_payload_rejects_weekday_mismatch():
+    cfg = _cfg()
+    payload = st._build_payload(cfg, [_rec("2026-07-04", "大体育室半面Ａ", "occupied")])
+    # 2026-07-04 は土曜日だが「日」に改ざん
+    payload["days"][0]["weekday"] = "日"
+    errors = st._validate_payload(payload, payload["areas"], cfg.period_order)
+    assert any("不正な曜日" in e for e in errors)
+
+
+def test_validate_payload_rejects_non_bool_holiday():
+    cfg = _cfg()
+    payload = st._build_payload(cfg, [_rec("2026-07-04", "大体育室半面Ａ", "occupied")])
+    payload["days"][0]["isHoliday"] = "yes"  # 文字列
+    errors = st._validate_payload(payload, payload["areas"], cfg.period_order)
+    assert any("isHoliday" in e for e in errors)
+
+
+def test_validate_payload_rejects_non_dict_area():
+    cfg = _cfg()
+    payload = st._build_payload(cfg, [_rec("2026-07-04", "大体育室半面Ａ", "occupied")])
+    payload["days"][0]["byArea"]["大体育室半面Ａ"] = "occupied"  # dict ではなく文字列
+    errors = st._validate_payload(payload, payload["areas"], cfg.period_order)
+    assert any("辞書型でない" in e for e in errors)
+
+
+def test_http_request_with_retry_succeeds(monkeypatch):
+    import io
+    import urllib.request
+
+    class MockResponse:
+        def read(self):
+            return b'{"ok": true}'
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=15: MockResponse())
+    req = urllib.request.Request("http://example.com")
+    res = st._http_request_with_retry(req, timeout=5, max_retries=2)
+    assert res == b'{"ok": true}'
+

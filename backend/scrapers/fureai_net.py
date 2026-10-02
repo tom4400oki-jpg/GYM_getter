@@ -581,9 +581,14 @@ class FureaiNetScraper(BaseScraper):
                         if on_progress:
                             on_progress(f"{area_name} {date_str} 時間帯取得")
                         # 月間カレンダーへ戻る
-                        await self._navigate_to_monthly_calendar(facility_id, area, booking_type)
+                        if not await self._navigate_to_monthly_calendar(facility_id, area, booking_type):
+                            self._log(f"月間カレンダーへの復帰に失敗 ({facility_id}/{area_name})。以降の週取得を中断します")
+                            break
                         await self._move_to_month(year, month)
                         cur = await self._extract_monthly_calendar()
+                        if not cur.get("days"):
+                            self._log(f"月間カレンダーの再抽出に失敗 ({facility_id}/{area_name})。")
+                            break
 
             # キャッシュから時間帯を割り当て（同じ週の予約あり/開放日にも付く）
             for date_str in month_dates:
