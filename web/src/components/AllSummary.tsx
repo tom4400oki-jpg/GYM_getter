@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatMonthDay } from "@/lib/utils";
 import {
   dataSchema,
   dayHasReservable,
@@ -132,8 +132,13 @@ export default function AllSummary({
             key={row.date}
             className="flex items-start gap-2 border-b border-slate-100 px-2 py-1.5 last:border-0"
           >
-            <div className={cn("w-16 shrink-0 pt-0.5 text-[11px] font-bold", dateColor)}>
-              {row.date.slice(5).replace("-", "/")}
+            <div
+              className={cn(
+                "w-16 shrink-0 pt-0.5 text-[11px] font-bold whitespace-nowrap",
+                dateColor
+              )}
+            >
+              {formatMonthDay(row.date)}
               <span className="ml-0.5 text-[9px] font-normal">
                 ({row.weekday}
                 {row.isHoliday ? "・祝" : ""})

@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatMonthDay } from "@/lib/utils";
 import { meta } from "@/lib/status";
 import { isReservable, isWeekendOrHoliday, type DayData } from "@/lib/schema";
 import {
@@ -49,7 +49,7 @@ export default function DayRow({
       : wd === "土"
         ? "text-sky-600"
         : "text-slate-700";
-  const dn = day.date.slice(5).replace("-", "/");
+  const dn = formatMonthDay(day.date);
   const holidayRate = isWeekendOrHoliday(day);
 
   // その日の予約可能スロット数（テニスのサマリ表示用）
@@ -116,7 +116,7 @@ export default function DayRow({
       >
         <div
           className={cn(
-            "flex items-center justify-center gap-0.5 px-1 py-1.5 text-[11px] font-bold",
+            "flex items-center justify-center gap-0.5 whitespace-nowrap px-0.5 py-1.5 text-[11px] font-bold",
             isOpen ? "text-white" : dateColor
           )}
         >

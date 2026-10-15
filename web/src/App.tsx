@@ -208,8 +208,8 @@ export default function App() {
   // 一覧の列にはせず、日別行は空き枠数のサマリ、展開時に転置グリッドを出す。
   const isTennis = fac?.cat === "tennis";
   const listCols = isTennis
-    ? "3.2rem 1fr"
-    : `3.2rem repeat(${Math.max(areas.length, 1)}, minmax(0,1fr))`;
+    ? "5rem 1fr"
+    : `5rem repeat(${Math.max(areas.length, 1)}, minmax(0,1fr))`;
 
   if (indexError) {
     return (
