@@ -1,6 +1,6 @@
 name: テニス空き確認・自動デプロイ（等々力／富士見）
 
-# テニスはコート数が多く（等々力10面＋富士見12面）1回あたり約20分かかるため、
+# テニスはコート数が多く（等々力10面＋富士見12面＋大師3面＋多摩2面）時間がかかるため、
 # 体育館とは別ワークフローに分離している。体育館側のライブデータは scrape_fureai.py が
 # 公開中JSONを書き戻して保持するので、デプロイで体育館データが退行することはない。
 # 体育館と同じ concurrency グループで直列化される（20分＋6分 < 2時間間隔なので詰まらない）。
@@ -9,7 +9,12 @@ on:
   schedule:
     # 1日8回：JST 7,9,11,13,15,17,19,21（UTC 22,0,2,4,6,8,10,12）。体育館側と同一。
     - cron: "0 22,0,2,4,6,8,10,12 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "データ無変化でも強制デプロイ（web側の変更を反映したい時）"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,15 +40,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('requirements-scrape.txt') }}
 
       - name: Python 依存インストール
         run: |
           pip install -r requirements-scrape.txt
           python -m playwright install --with-deps chromium
 
+      - name: 単体テスト
+        run: |
+          pip install pytest
+          python -m pytest tests/ -q
+
       - name: テニス空き状況スクレイプ
         id: scrape
+        shell: bash
         env:
           FUREAI_USER_ID: ${{ secrets.FUREAI_USER_ID }}
           FUREAI_PASSWORD: ${{ secrets.FUREAI_PASSWORD }}
@@ -54,7 +65,10 @@ jobs:
           HEADLESS: "true"
           PYTHONUTF8: "1"
           SCRAPE_GROUP: "tennis"
-        run: python scripts/scrape_fureai.py
+          FORCE_DEPLOY: ${{ inputs.force_deploy }}
+        run: |
+          set -o pipefail
+          python scripts/scrape_fureai.py --defer-notify 2>&1 | tee scrape_output.log
 
       - name: Node セットアップ
         uses: actions/setup-node@v4
@@ -70,10 +84,10 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
-      # 認証実績のある公式アクションでデプロイ。ランナー→Google API の
-      # "Premature close" で、リリース成功後の再送が "is the current active
-      # version" 400 を返し step が失敗扱いになることがあるため continue-on-error。
-      # 実際に反映されたかは次のステップでライブ内容を見て判定する。
+      # 認証実績のある公式アクションでデプロイ。
+      # firebase-tools@15.34.1 以降は Service Usage API (serviceusage.services.get) を要求し
+      # Hosting 用サービスアカウントで 403 になるため、動作確認済みの 15.34.0 にピン留めする。
+      # また "Premature close" による再送 400 に備えて continue-on-error とし、次ステップで実反映を検証する。
       - name: Firebase Hosting へデプロイ
         if: steps.scrape.outputs.deploy == 'true'
         id: deploy
@@ -84,11 +98,13 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: gym-getter
           channelId: live
+          firebaseToolsVersion: "15.34.0"
 
       # 毎実行必ず最新タイムスタンプで生成される facilities.json の updatedAt を
       # ライブ環境と比較することで、特定施設の取得成否に左右されず確実に反映を検証する。
       - name: デプロイ反映の検証
         if: steps.scrape.outputs.deploy == 'true'
+        id: verify
         shell: bash
         run: |
           set -uo pipefail
@@ -105,3 +121,40 @@ jobs:
           done
           echo "::error::ライブにビルド内容が反映されていません（deploy outcome=${{ steps.deploy.outcome }}）。"
           exit 1
+
+      # デプロイ反映が確認できた後に初めて利用者向け LINE ブロードキャストを送信する
+      - name: LINE 通知送信（デプロイ反映後）
+        if: steps.scrape.outputs.deploy == 'true' && steps.verify.outcome == 'success'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_ADMIN_USER_ID: ${{ secrets.LINE_ADMIN_USER_ID }}
+          PYTHONUTF8: "1"
+        run: python scripts/scrape_fureai.py --flush-notify
+
+      - name: デプロイ失敗時の管理者通知
+        if: failure() && steps.scrape.outputs.deploy == 'true'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_ADMIN_USER_ID: ${{ secrets.LINE_ADMIN_USER_ID }}
+          PYTHONUTF8: "1"
+        run: |
+          python scripts/scrape_fureai.py --notify-admin "テニスデプロイ反映失敗 (run=${{ github.run_id }}, deploy=${{ steps.deploy.outcome }}, verify=${{ steps.verify.outcome }})"
+
+      - name: チャット貼付用ログの出力
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### 📋 チャット貼付用 診断ログ（右上のコピーボタンでコピーできます）"
+            echo '```text'
+            echo "Workflow: ${{ github.workflow }} (run_id=${{ github.run_id }})"
+            echo "Steps: scrape=${{ steps.scrape.outcome }} / deploy_flag=${{ steps.scrape.outputs.deploy }} / firebase_deploy=${{ steps.deploy.outcome }} / verify=${{ steps.verify.outcome }}"
+            if [ -f .scrape_summary.md ]; then
+              cat .scrape_summary.md
+            fi
+            if [ -f scrape_output.log ]; then
+              echo "--- console log (tail 35) ---"
+              tail -n 35 scrape_output.log
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

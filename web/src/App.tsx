@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, ExternalLink, AlertTriangle } from "lucide-react";
+import { RefreshCw, ExternalLink, AlertTriangle, Terminal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ import {
 } from "@/lib/facilities";
 import DayRow from "@/components/DayRow";
 import AllSummary from "@/components/AllSummary";
+import LogModal from "@/components/LogModal";
 
 import { z } from "zod";
 
@@ -81,6 +82,7 @@ export default function App() {
     params.get("evening") === "1" || (saved.onlyEvening ?? false)
   );
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [logOpen, setLogOpen] = useState(params.get("log") === "1");
 
   useEffect(() => {
     loadFacilities()
@@ -213,10 +215,28 @@ export default function App() {
 
   if (indexError) {
     return (
-      <div className="mx-auto max-w-xl px-2 py-8">
+      <div className="mx-auto min-h-[100dvh] max-w-xl px-2 py-8">
         <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-600">
           {indexError}（再読み込みしてください）
         </p>
+        <button
+          type="button"
+          onClick={() => setLogOpen(true)}
+          className="mt-3 flex min-h-[44px] items-center gap-1.5 rounded border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 active:bg-slate-100"
+        >
+          <Terminal className="h-4 w-4 text-emerald-600" />
+          診断ログを確認・コピーする
+        </button>
+        <LogModal
+          open={logOpen}
+          onClose={() => setLogOpen(false)}
+          context={{
+            index: null,
+            facilityId: "none",
+            category,
+            uiError: indexError,
+          }}
+        />
       </div>
     );
   }
@@ -226,7 +246,10 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-2 pb-12">
+    <div
+      className="mx-auto min-h-[100dvh] max-w-xl px-2 pb-12"
+      style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
+    >
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 -mx-2 mb-2 border-b border-slate-200 bg-slate-50/95 px-2 py-2 backdrop-blur">
         <div className="flex items-center justify-between gap-2">
@@ -243,10 +266,14 @@ export default function App() {
               )}
             </p>
             {!isAll && stale && data && (
-              <p className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-amber-600">
-                <AlertTriangle className="h-3 w-3" />
-                データが古い可能性があります（自動更新が滞っているかもしれません）
-              </p>
+              <button
+                type="button"
+                onClick={() => setLogOpen(true)}
+                className="mt-0.5 flex items-center gap-1 text-left text-[10px] font-medium text-amber-600 underline"
+              >
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                データが古い可能性があります（タップで診断ログを確認）
+              </button>
             )}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
@@ -259,15 +286,27 @@ export default function App() {
               <ExternalLink className="h-3 w-3" />
               予約する
             </a>
-            {currentFac && (
+            <div className="flex items-center gap-1">
+              {currentFac && (
+                <button
+                  type="button"
+                  onClick={() => loadData(currentFac)}
+                  className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 active:bg-slate-100"
+                >
+                  <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                  更新
+                </button>
+              )}
               <button
-                onClick={() => loadData(currentFac)}
+                type="button"
+                onClick={() => setLogOpen(true)}
+                title="稼働・診断ログをコピー"
                 className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 active:bg-slate-100"
               >
-                <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-                更新
+                <Terminal className="h-3 w-3 text-emerald-600" />
+                ログ
               </button>
-            )}
+            </div>
           </div>
         </div>
         {/* カテゴリ（体育館 / テニス） */}
@@ -363,7 +402,16 @@ export default function App() {
         <p className="py-8 text-center text-xs text-slate-400">読み込み中…</p>
       )}
       {!isAll && error && (
-        <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+        <div className="rounded bg-red-50 px-3 py-2 text-xs text-red-600">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => setLogOpen(true)}
+            className="mt-1 underline"
+          >
+            診断ログを表示・コピーする
+          </button>
+        </div>
       )}
 
       {!isAll && currentFac && data && (
@@ -408,20 +456,42 @@ export default function App() {
         </>
       )}
 
-      <p className="mt-3 px-1 text-[10px] leading-relaxed text-slate-400">
-        ふれあいネットの予約空き状況を自動取得。○△が予約で取れる枠です。実際の予約は
-        <a
-          href={FALLBACK_RESERVE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sky-500 underline"
+      <div className="mt-4 flex flex-col gap-2 px-1">
+        <p className="text-[10px] leading-relaxed text-slate-400">
+          ふれあいネットの予約空き状況を自動取得。○△が予約で取れる枠です。実際の予約は
+          <a
+            href={FALLBACK_RESERVE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sky-500 underline"
+          >
+            ふれあいネット
+          </a>
+          で行ってください。
+          <br />
+          料金は令和7年度・入場料を徴収しない場合の使用料です（土日祝は休日料金。入場料を徴収する場合は別料金）。
+        </p>
+
+        <button
+          type="button"
+          onClick={() => setLogOpen(true)}
+          className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm active:bg-slate-100"
         >
-          ふれあいネット
-        </a>
-        で行ってください。
-        <br />
-        料金は令和7年度・入場料を徴収しない場合の使用料です（土日祝は休日料金。入場料を徴収する場合は別料金）。
-      </p>
+          <Terminal className="h-4 w-4 text-emerald-600" />
+          稼働・診断ログを表示（チャット貼付用にコピー）
+        </button>
+      </div>
+
+      <LogModal
+        open={logOpen}
+        onClose={() => setLogOpen(false)}
+        context={{
+          index,
+          facilityId,
+          category,
+          uiError: error,
+        }}
+      />
     </div>
   );
 }

@@ -9,9 +9,15 @@ DB・FastAPI には依存しない。
   - ログイン失敗を「メンテ時間（正常）」と「真の失敗（要対応）」で区別する
   - エリア単位で成否を判定し、一部失敗時はそのエリアだけ前回値を保持・通知抑止する
   - 異常（真のログイン失敗・全エリア失敗・部分失敗）は管理者に通知し Actions に注釈を出す
+  - デプロイ反映前に LINE 通知が飛んでデプロイ失敗時に連投されるのを防ぐため、
+    --defer-notify（保留保存）と --flush-notify（デプロイ検証後に送信）の2段階送信に対応する
+  - 改善ループを回せるよう、構造化実行ログを web/public/scrape-log.json に出力する
 
 使い方:
     python scripts/scrape_fureai.py
+    python scripts/scrape_fureai.py --defer-notify
+    python scripts/scrape_fureai.py --flush-notify
+    python scripts/scrape_fureai.py --notify-admin "エラーメッセージ"
 
 環境変数（.env または GitHub Secrets）:
     FUREAI_USER_ID, FUREAI_PASSWORD, FUREAI_SECURITY_NUMBER
@@ -25,11 +31,14 @@ import re
 import sys
 import json
 import time
+import argparse
 import asyncio
 import urllib.request
 import urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+JST = timezone(timedelta(hours=9))
 
 # Windows の cp932 コンソールでも日本語 print でクラッシュしないよう UTF-8 に固定
 for _stream in (sys.stdout, sys.stderr):
@@ -84,6 +93,18 @@ LINE_MAX_LINES_PER_FACILITY = 12
 
 # 変化のあった施設を溜めて実行の最後に1通だけ送るためのキュー
 _PENDING_NOTIFY: list[tuple] = []
+
+# 管理者通知・警告メッセージを構造化ログにも残すためのバッファ
+_ADMIN_WARNINGS: list[str] = []
+
+# デプロイ成功後にLINE通知を送るための一時ファイル（ビルド対象外）
+PENDING_NOTIFY_PATH = ROOT / ".pending_notify.json"
+# GitHub Actions の Job Summary 貼付用ファイル
+SCRAPE_SUMMARY_MD_PATH = ROOT / ".scrape_summary.md"
+# フロントエンドから参照可能な構造化稼働ログ
+SCRAPE_LOG_FILENAME = "scrape-log.json"
+SCRAPE_LOG_PATH = ROOT / "web" / "public" / SCRAPE_LOG_FILENAME
+LIVE_SCRAPE_LOG_URL = f"{APP_URL}/{SCRAPE_LOG_FILENAME}"
 
 # map_status が返しうる全ステータス（web/src/lib/schema.ts の Zod enum と対）
 KNOWN_STATUSES = {
@@ -740,7 +761,7 @@ def _clean_secret(s: str) -> str:
     """トークン等から前後空白と BOM(\\ufeff) を除去する。
     Windows で作成した Secret に BOM が混入すると、urllib が Authorization ヘッダを
     latin-1 でエンコードできず送信が丸ごと失敗する（.strip() は BOM を消さない）。"""
-    return s.replace("﻿", "").strip()
+    return s.replace("\ufeff", "").strip()
 
 
 def _http_request_with_retry(
@@ -855,21 +876,42 @@ def _queue_notify(cfg: FacilityConfig, current: dict, added: dict, removed: dict
     _PENDING_NOTIFY.append((cfg, current, added, removed))
 
 
-def _flush_notify() -> None:
-    """キューに積まれた全施設の変化を LINE へ1通だけブロードキャストする。
-    施設ごとに送ると最大12通/実行になり、無料枠（200通/月・友だち数×通数で消費）を
-    すぐ使い切るため、1回の実行につき必ず1通へ集約する。"""
+def _save_pending_notify(path: Path = PENDING_NOTIFY_PATH) -> bool:
+    """保留中の通知をファイルに保存する（デプロイ反映確認後に --flush-notify で送るため）。
+    保存した場合は True、通知対象が無い場合は既存ファイルを消して False を返す。"""
     if not _PENDING_NOTIFY:
-        return
-
-    token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
-    if not token:
-        print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
-        _PENDING_NOTIFY.clear()
-        return
+        if path.exists():
+            try:
+                path.unlink()
+            except OSError:
+                pass
+        print("[通知] 変化なし（保留通知ファイルなし）", flush=True)
+        return False
 
     content = _build_combined_message(_PENDING_NOTIFY)
     names = "／".join(cfg.facility_name for cfg, _c, _a, _r in _PENDING_NOTIFY)
+    data = {
+        "createdAt": datetime.now(JST).isoformat(timespec="seconds"),
+        "facilityCount": len(_PENDING_NOTIFY),
+        "facilityNames": names,
+        "text": content,
+    }
+    atomic_write_json(path, data)
+    print(
+        f"[通知] デプロイ後に送信するため通知を保留保存 ({len(_PENDING_NOTIFY)}施設: {names} / {len(content)}字) → {path}",
+        flush=True,
+    )
+    _PENDING_NOTIFY.clear()
+    return True
+
+
+def _send_broadcast_text(content: str, count: int, names: str) -> bool:
+    """整形済みテキストを LINE Broadcast API へ送信する。"""
+    token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
+    if not token:
+        print("[通知] LINE_CHANNEL_ACCESS_TOKEN 未設定のため通知スキップ", flush=True)
+        return False
+
     try:
         data = json.dumps({"messages": [{"type": "text", "text": content}]}).encode("utf-8")
         req = urllib.request.Request(
@@ -882,10 +924,11 @@ def _flush_notify() -> None:
         )
         _http_request_with_retry(req, timeout=15, max_retries=2)
         print(
-            f"[通知] LINE送信OK（1通に集約 / {len(_PENDING_NOTIFY)}施設: {names} / {len(content)}字）",
+            f"[通知] LINE送信OK（1通に集約 / {count}施設: {names} / {len(content)}字）",
             flush=True,
         )
         _check_line_quota(token)
+        return True
     except Exception as e:
         body = ""
         if isinstance(e, urllib.error.HTTPError):
@@ -894,8 +937,69 @@ def _flush_notify() -> None:
             except Exception:
                 pass
         print(f"[通知] LINE送信失敗: {e} {body}", flush=True)
+        return False
+
+
+def _flush_notify() -> None:
+    """キューに積まれた全施設の変化を LINE へ1通だけブロードキャストする。
+    施設ごとに送ると最大12通/実行になり、無料枠（200通/月・友だち数×通数で消費）を
+    すぐ使い切るため、1回の実行につき必ず1通へ集約する。"""
+    if not _PENDING_NOTIFY:
+        return
+
+    content = _build_combined_message(_PENDING_NOTIFY)
+    names = "／".join(cfg.facility_name for cfg, _c, _a, _r in _PENDING_NOTIFY)
+    count = len(_PENDING_NOTIFY)
+    try:
+        _send_broadcast_text(content, count, names)
     finally:
         _PENDING_NOTIFY.clear()
+
+
+def flush_saved_notify(path: Path = PENDING_NOTIFY_PATH) -> int:
+    """--flush-notify 用：保存済みの保留通知ファイルを読み込んで LINE 送信する。"""
+    if not path.exists():
+        print("[通知] 保留通知ファイルが無いため送信スキップ", flush=True)
+        return 0
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        text = data.get("text", "")
+        count = int(data.get("facilityCount") or 0)
+        names = str(data.get("facilityNames") or "")
+        if not text:
+            print("[通知] 保留通知が空のためスキップ", flush=True)
+            return 0
+        _send_broadcast_text(text, count, names)
+        return 0
+    except Exception as e:
+        print(f"[通知] 保留通知の読み込み/送信エラー: {e}", flush=True)
+        return 1
+    finally:
+        if path.exists():
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
+
+def get_line_quota_info() -> dict | None:
+    """LINE Messaging API の月間送信数と上限を取得して辞書で返す（取得不可時は None）。"""
+    token = _clean_secret(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", ""))
+    if not token:
+        return None
+    try:
+        def _get(url: str) -> dict:
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+            data = _http_request_with_retry(req, timeout=10, max_retries=2)
+            return json.loads(data.decode("utf-8"))
+
+        quota = _get(LINE_QUOTA_URL)
+        usage = int(_get(LINE_QUOTA_CONSUMPTION_URL).get("totalUsage") or 0)
+        limit = int(quota.get("value") or 0) if quota.get("type") == "limited" else None
+        return {"usage": usage, "limit": limit, "type": quota.get("type", "unknown")}
+    except Exception as e:
+        print(f"[通知] LINE送信数の確認失敗: {e}", flush=True)
+        return None
 
 
 def _check_line_quota(token: str) -> None:
@@ -927,6 +1031,7 @@ def _notify_admin(reason: str) -> None:
     """管理者向けの異常アラート。GitHub Actions の注釈を必ず出し、
     LINE_ADMIN_USER_ID が設定されていれば管理者個人へ push する。"""
     msg = f"⚠ GYM Getter 異常: {reason}"
+    _ADMIN_WARNINGS.append(reason)
     # GitHub Actions のログ注釈（ジョブの Annotations に表示される）
     print(f"::warning title=GYM Getter::{msg}", flush=True)
     print(f"[管理者通知] {msg}", flush=True)
@@ -965,28 +1070,49 @@ def _set_output(key: str, value: str) -> None:
             pass
 
 
-async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool]:
+async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, list[dict]]:
     """1回ログインして全施設を順に取得する（同一資格情報のため共有）。
-    戻り値: (results, maintenance)
+    戻り値: (results, maintenance, flow_log)
       results = { facility_id: by_area }。ログイン不可なら results=None。
     """
     results: dict[str, dict] = {}
     async with FureaiNetScraper(**_scraper_kwargs()) as scraper:
         if not await scraper.login():
-            return None, scraper.maintenance
+            return None, scraper.maintenance, list(scraper._flow_log)
         for cfg in cfgs:
             if not cfg.scrape_enabled:
                 continue
             print(f"--- {cfg.facility_name} 取得開始 ---", flush=True)
             results[cfg.facility_id] = await _collect_records(cfg, scraper)
-    return results, False
+        return results, False, list(scraper._flow_log)
 
 
-def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None) -> bool:
-    """1施設分の payload 構築・出力・通知を行う。デプロイ対象になったら True。"""
+def _process_facility(
+    cfg: FacilityConfig,
+    by_area: dict,
+    previous: dict | None,
+    diag_out: dict | None = None,
+) -> bool:
+    """1施設分の payload 構築・出力・通知を行う。デプロイ対象になったら True。
+    diag_out に辞書を渡すと、診断ログ用の結果メタを格納する。"""
     area_names = [a["name"] for a in FACILITY_NAV[cfg.facility_id]["areas"]]
     failed = [a for a in area_names if not _area_ok(by_area.get(a, []))]
     ok_areas = [a for a in area_names if a not in failed]
+
+    if diag_out is not None:
+        diag_out.update({
+            "id": cfg.web_id,
+            "name": cfg.facility_name,
+            "status": "failed" if not ok_areas else ("partial" if failed else "ok"),
+            "days": 0,
+            "reservableDays": 0,
+            "okAreas": ok_areas,
+            "failedAreas": failed,
+            "unknownRatio": 0.0,
+            "unknownSamples": [],
+            "notifyAdded": 0,
+            "notifyRemoved": 0,
+        })
 
     # 全エリア失敗（メンテ移行直後など）→ 既存ファイル維持・通知/デプロイなし
     if not ok_areas:
@@ -995,13 +1121,21 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
         return False
 
     # 文言変更の早期検知：生文字列があるのに unknown 判定が多いエリアは構造変化の疑い
+    max_unk_ratio = 0.0
+    unk_samples: list[str] = []
     for a in ok_areas:
         ratio, samples = _unknown_raw_ratio(by_area[a])
+        if ratio > max_unk_ratio:
+            max_unk_ratio = ratio
+            unk_samples = samples
         if ratio >= UNKNOWN_ALERT_RATIO:
             _notify_admin(
                 f"{cfg.facility_name}/{a}: 未知のステータス文言が{ratio:.0%}"
                 f"（例: {samples}）。ふれあいネットの文言変更の可能性"
             )
+    if diag_out is not None:
+        diag_out["unknownRatio"] = round(max_unk_ratio, 3)
+        diag_out["unknownSamples"] = unk_samples
 
     records = [r for a in ok_areas for r in by_area[a]]
     payload = _build_payload(cfg, records)
@@ -1015,6 +1149,8 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     n_days = len(payload["days"])
     if n_days == 0:
         print(f"[{cfg.facility_name}][警告] 取得0日。{cfg.output_filename} は更新せずスキップ", flush=True)
+        if diag_out is not None:
+            diag_out["status"] = "failed"
         return False
 
     # 書き込み前の最終スキーマ検証（壊れた JSON をデプロイしない最後の砦）
@@ -1022,6 +1158,8 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     if schema_errors:
         print(f"[{cfg.facility_name}][警告] スキーマ検証エラーのため更新スキップ: {schema_errors}", flush=True)
         _notify_admin(f"{cfg.facility_name}: data検証エラーで更新スキップ {schema_errors[:3]}")
+        if diag_out is not None:
+            diag_out["status"] = "failed"
         return False
 
     atomic_write_json(cfg.output_path, payload)
@@ -1031,6 +1169,10 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
         for d in payload["days"]
         if any(a["status"] in RESERVABLE for a in d["byArea"].values())
     )
+    if diag_out is not None:
+        diag_out["days"] = n_days
+        diag_out["reservableDays"] = n_reservable
+
     print(
         f"=== {cfg.facility_name} 完了: {n_days}日 × {len(payload['areas'])}エリア / "
         f"予約可能{n_reservable}日 → {cfg.output_path} ===",
@@ -1048,6 +1190,9 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
         old = _notify_filter(_reservable_keys(previous, only_areas=ok_areas))
         added = {k: v for k, v in new_now.items() if k not in old}
         removed = {k: v for k, v in old.items() if k not in new_now}
+        if diag_out is not None:
+            diag_out["notifyAdded"] = len(added)
+            diag_out["notifyRemoved"] = len(removed)
         if added or removed:
             print(
                 f"[{cfg.facility_name}][通知] 通知対象に変化あり（新着{len(added)}件 / 埋まり{len(removed)}件）。"
@@ -1060,8 +1205,136 @@ def _process_facility(cfg: FacilityConfig, by_area: dict, previous: dict | None)
     return True
 
 
-def main() -> int:
-    print(f"=== ふれあいネット 空き確認 開始 {datetime.now():%Y-%m-%d %H:%M:%S} ===", flush=True)
+def _fetch_previous_scrape_log() -> dict:
+    """公開中またはローカルの scrape-log.json を取得する（別グループの結果を保持するため）。"""
+    try:
+        req = urllib.request.Request(LIVE_SCRAPE_LOG_URL, headers={"Cache-Control": "no-cache"})
+        raw = _http_request_with_retry(req, timeout=10, max_retries=2)
+        data = json.loads(raw.decode("utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("groups"), dict):
+            return data
+    except Exception:
+        pass
+    if SCRAPE_LOG_PATH.exists():
+        try:
+            data = json.loads(SCRAPE_LOG_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and isinstance(data.get("groups"), dict):
+                return data
+        except Exception:
+            pass
+    return {"updatedAt": datetime.now(timezone.utc).isoformat(), "groups": {}}
+
+
+def write_scrape_log_and_summary(
+    group: str,
+    started_at: datetime,
+    finished_at: datetime,
+    status: str,
+    maintenance: bool,
+    facility_diags: list[dict],
+    flow_log: list[dict],
+    warnings: list[str],
+    line_quota: dict | None,
+) -> None:
+    """構造化稼働ログ web/public/scrape-log.json と GitHub Actions 用サマリ .scrape_summary.md を出力する。"""
+    duration_sec = round((finished_at - started_at).total_seconds(), 1)
+    run_id = os.getenv("GITHUB_RUN_ID", "")
+    group_entry = {
+        "group": group,
+        "startedAt": started_at.isoformat(timespec="seconds"),
+        "finishedAt": finished_at.isoformat(timespec="seconds"),
+        "durationSec": duration_sec,
+        "status": status,
+        "maintenance": maintenance,
+        "runId": run_id,
+        "lineQuota": line_quota,
+        "facilities": facility_diags,
+        "warnings": warnings[:20],
+        "flowLogTail": [
+            f"{item.get('time', '')} {item.get('msg', '')}"
+            for item in flow_log[-30:]
+        ],
+    }
+
+    prev_log = _fetch_previous_scrape_log()
+    groups = prev_log.get("groups") if isinstance(prev_log.get("groups"), dict) else {}
+    groups[group] = group_entry
+    merged_log = {
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "groups": groups,
+    }
+    atomic_write_json(SCRAPE_LOG_PATH, merged_log)
+    print(f"[稼働ログ] {SCRAPE_LOG_FILENAME} を更新 → {SCRAPE_LOG_PATH}", flush=True)
+
+    # GitHub Actions の Job Summary にそのまま貼れる Markdown を生成
+    lines = [
+        f"=== GYM Getter 実行ログ ({group}) ===",
+        f"実行時刻(JST): {started_at:%Y-%m-%d %H:%M:%S} -> {finished_at:%H:%M:%S} ({duration_sec}s)",
+        f"ステータス: {status} (maintenance={maintenance}, runId={run_id or 'local'})",
+    ]
+    if line_quota:
+        lim = line_quota.get("limit") or "unlimited"
+        lines.append(f"LINE送信数: 今月 {line_quota.get('usage', 0)}/{lim} 通")
+    if warnings:
+        lines.append("警告/異常:")
+        for w in warnings:
+            lines.append(f"  - {w}")
+    if facility_diags:
+        lines.append("施設別結果:")
+        for fd in facility_diags:
+            unk_str = f" / unk={fd['unknownRatio']:.0%}" if fd.get("unknownRatio", 0) > 0 else ""
+            fail_str = f" / 失敗エリア={fd['failedAreas']}" if fd.get("failedAreas") else ""
+            diff_str = ""
+            if fd.get("notifyAdded") or fd.get("notifyRemoved"):
+                diff_str = f" / 通知差分(+{fd['notifyAdded']}, -{fd['notifyRemoved']})"
+            lines.append(
+                f"  - {fd['name']}: {fd['status']} ({fd['days']}日, 予約可{fd['reservableDays']}日{unk_str}{fail_str}{diff_str})"
+            )
+    if flow_log:
+        lines.append("スクレイパーログ末尾:")
+        for item in flow_log[-10:]:
+            lines.append(f"  {item.get('time', '')} {item.get('msg', '')}")
+
+    try:
+        SCRAPE_SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="ふれあいネット空き確認スクレイパー")
+    parser.add_argument(
+        "--defer-notify",
+        action="store_true",
+        help="LINEブロードキャストを即時送信せず .pending_notify.json に保存する（デプロイ反映後に --flush-notify で送信）",
+    )
+    parser.add_argument(
+        "--flush-notify",
+        action="store_true",
+        help="保存済みの .pending_notify.json を読み込んで LINE ブロードキャストを送信する",
+    )
+    parser.add_argument(
+        "--notify-admin",
+        type=str,
+        default="",
+        help="管理者へ異常アラート（GitHub Actions 注釈 + LINE push）を送信して終了する",
+    )
+    args = parser.parse_args(argv)
+
+    if args.notify_admin:
+        _notify_admin(args.notify_admin)
+        return 0
+
+    if args.flush_notify:
+        return flush_saved_notify()
+
+    defer_notify = args.defer_notify or (
+        os.getenv("DEFER_NOTIFY", "").strip().lower() in ("1", "true", "yes")
+    )
+
+    started_at = datetime.now(JST)
+    _ADMIN_WARNINGS.clear()
+    print(f"=== ふれあいネット 空き確認 開始 {started_at:%Y-%m-%d %H:%M:%S} (JST) ===", flush=True)
 
     # 施設タブ・料金・時刻のメタをフロントへ渡す（毎回生成＝FACILITIES が単一の真実）
     write_facilities_index()
@@ -1085,13 +1358,32 @@ def main() -> int:
     # 通知用に前回（公開中）データを施設ごとに先取得
     previous_map = {cfg.facility_id: _fetch_previous(cfg) for cfg in targets}
 
-    collected, maintenance = _run_async(_collect_all(targets))
+    collected_res = _run_async(_collect_all(targets))
+    # 後方互換（テスト等で2タプルが返る場合にも対応）
+    if len(collected_res) == 3:
+        collected, maintenance, flow_log = collected_res
+    else:
+        collected, maintenance = collected_res
+        flow_log = []
 
     force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
+    line_quota = get_line_quota_info()
 
     # ── ログイン不可（全施設共通）──────────────
     if collected is None:
+        finished_at = datetime.now(JST)
         if maintenance:
+            write_scrape_log_and_summary(
+                group=group,
+                started_at=started_at,
+                finished_at=finished_at,
+                status="maintenance",
+                maintenance=True,
+                facility_diags=[],
+                flow_log=flow_log,
+                warnings=list(_ADMIN_WARNINGS),
+                line_quota=line_quota,
+            )
             # メンテ時間は正常系。各 data.json 維持・通知なし・ジョブ成功扱い。
             # ただし FORCE_DEPLOY 指定時は、対象施設も公開中(ライブ)データを書き戻して
             # 退行を防いだ上でデプロイし、web 側のソース変更だけを反映する。
@@ -1109,20 +1401,55 @@ def main() -> int:
         _set_output("deploy", "false")
         # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
         _notify_admin("ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）")
+        write_scrape_log_and_summary(
+            group=group,
+            started_at=started_at,
+            finished_at=finished_at,
+            status="error",
+            maintenance=False,
+            facility_diags=[],
+            flow_log=flow_log,
+            warnings=list(_ADMIN_WARNINGS),
+            line_quota=line_quota,
+        )
         return 1
 
     any_deploy = False
+    facility_diags: list[dict] = []
     for cfg in targets:
-        if _process_facility(cfg, collected.get(cfg.facility_id, {}), previous_map[cfg.facility_id]):
+        f_diag: dict = {}
+        if _process_facility(cfg, collected.get(cfg.facility_id, {}), previous_map[cfg.facility_id], diag_out=f_diag):
             any_deploy = True
+        if f_diag:
+            facility_diags.append(f_diag)
 
-    # 施設ごとに送らず、この実行で変化のあった全施設を1通にまとめて送る。
-    _flush_notify()
+    # デプロイ成功前に通知を送るとデプロイ失敗時に連投されるため、
+    # CI実行時（--defer-notify）はファイルに保留保存し、デプロイ検証成功後に --flush-notify で送る。
+    if defer_notify:
+        _save_pending_notify()
+    else:
+        _flush_notify()
 
     # web 側のソース変更のみを反映したい場合は、データ無変化でも強制デプロイする。
     if force and not any_deploy:
         print("[デプロイ] FORCE_DEPLOY 指定によりデータ無変化でもデプロイします", flush=True)
         any_deploy = True
+
+    overall_status = "ok"
+    if any(d.get("status") != "ok" for d in facility_diags):
+        overall_status = "partial" if any_deploy else "error"
+
+    write_scrape_log_and_summary(
+        group=group,
+        started_at=started_at,
+        finished_at=datetime.now(JST),
+        status=overall_status,
+        maintenance=False,
+        facility_diags=facility_diags,
+        flow_log=flow_log,
+        warnings=list(_ADMIN_WARNINGS),
+        line_quota=line_quota,
+    )
 
     _set_output("deploy", "true" if any_deploy else "false")
     return 0

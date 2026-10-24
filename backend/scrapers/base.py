@@ -21,6 +21,9 @@ class BaseScraper:
                 timezone_id="Asia/Tokyo",
             )
             self.page = await context.new_page()
+            # ふれあいネットの一時的な応答遅延でハングまたは早期タイムアウトしないよう既定値を明示
+            self.page.set_default_timeout(30000)
+            self.page.set_default_navigation_timeout(45000)
             return self
         except Exception:
             if self.browser:

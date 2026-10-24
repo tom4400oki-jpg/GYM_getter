@@ -5,8 +5,10 @@ Java Struts ベースのシステム（.do エンドポイント）
 """
 import asyncio
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from backend.scrapers.base import BaseScraper
+
+JST = timezone(timedelta(hours=9))
 
 BASE_URL = "https://www.fureai-net.city.kawasaki.jp"
 TOP_URL = f"{BASE_URL}/web/"
@@ -204,52 +206,58 @@ class FureaiNetScraper(BaseScraper):
     # ログイン
     # ──────────────────────────────────────────
 
-    async def login(self) -> bool:
-        """ログイン。成功したら True を返す。"""
+    async def login(self, max_attempts: int = 2) -> bool:
+        """ログイン。成功したら True を返す。一時的な通信エラー時はリトライする。"""
         if not (self.user_id and self.password):
             self._log("ログイン情報未設定（user_id / password が必要）")
             return False
 
-        await self.page.goto(TOP_URL, wait_until="networkidle")
-        try:
-            await self.page.fill("input#userId", self.user_id)
-            await self.page.fill("input#pass", self.password)
-            if self.security_no:
-                await self.page.fill("input#securityNo", self.security_no)
-            await self.page.click("input[type='submit'][value='ログイン']")
-            await self.page.wait_for_load_state("networkidle")
+        for attempt in range(1, max_attempts + 1):
+            try:
+                await self.page.goto(TOP_URL, wait_until="networkidle")
+                await self.page.fill("input#userId", self.user_id)
+                await self.page.fill("input#pass", self.password)
+                if self.security_no:
+                    await self.page.fill("input#securityNo", self.security_no)
+                await self.page.click("input[type='submit'][value='ログイン']")
+                await self.page.wait_for_load_state("networkidle")
 
-            # ログイン成功判定：URLが変わっていれば成功
-            success = self.page.url != TOP_URL
-            if not success:
-                # ログアウトボタンがあれば成功
-                success = await self.page.locator("input[value='ログアウト']").count() > 0
+                # ログイン成功判定：URLが変わっていれば成功
+                success = self.page.url != TOP_URL
+                if not success:
+                    # ログアウトボタンがあれば成功
+                    success = await self.page.locator("input[value='ログアウト']").count() > 0
 
-            # メンテ時間（ログイン機能停止）/エラー画面の検出
-            if success:
-                try:
-                    page_title = await self.page.title()
-                    body_txt = await self.page.evaluate(
-                        "() => document.body ? document.body.innerText : ''"
-                    )
-                except Exception:
-                    page_title, body_txt = "", ""
-                if "ログイン機能停止" in body_txt or "エラー画面" in page_title:
-                    self._log("ログイン不可: ふれあいネットのメンテナンス時間（ログイン機能停止）")
-                    self.maintenance = True
-                    success = False
+                # メンテ時間（ログイン機能停止）/エラー画面の検出
+                if success:
+                    try:
+                        page_title = await self.page.title()
+                        body_txt = await self.page.evaluate(
+                            "() => document.body ? document.body.innerText : ''"
+                        )
+                    except Exception:
+                        page_title, body_txt = "", ""
+                    if "ログイン機能停止" in body_txt or "エラー画面" in page_title:
+                        self._log("ログイン不可: ふれあいネットのメンテナンス時間（ログイン機能停止）")
+                        self.maintenance = True
+                        self.is_logged_in = False
+                        return False
 
-            self.is_logged_in = success
-            if self.is_logged_in:
-                self._log(f"ログイン成功: {self.page.url}")
-                # 「伝言表示画面」（メッセージ確認ページ）が出たら「次へ」で突破
-                await self._dismiss_message_if_present()
-            else:
-                self._log(f"ログイン失敗: {self.page.url}")
-            return self.is_logged_in
-        except Exception as e:
-            self._log(f"ログイン例外: {e}")
-            return False
+                self.is_logged_in = success
+                if self.is_logged_in:
+                    self._log(f"ログイン成功: {self.page.url}")
+                    # 「伝言表示画面」（メッセージ確認ページ）が出たら「次へ」で突破
+                    await self._dismiss_message_if_present()
+                    return True
+
+                self._log(f"ログイン失敗 (試行 {attempt}/{max_attempts}): {self.page.url}")
+            except Exception as e:
+                self._log(f"ログイン例外 (試行 {attempt}/{max_attempts}): {e}")
+
+            if attempt < max_attempts:
+                await asyncio.sleep(2)
+
+        return False
 
     async def _dismiss_message_if_present(self) -> None:
         """「伝言表示画面」など確認ページの「次へ」ボタンを押してメニューへ進む"""
@@ -510,6 +518,15 @@ class FureaiNetScraper(BaseScraper):
             out.setdefault(date_str, {})[slot] = map_status(status_txt)
         return out
 
+    async def _recover_and_navigate(
+        self, facility_id: str, area: dict, booking_type: str = "reservation"
+    ) -> bool:
+        """月間カレンダー遷移に失敗した際、再ログインを挟んで1回だけ自己修復を試みる。"""
+        self._log(f"ナビゲーション自己修復を試行 ({facility_id}/{area['name']})")
+        if not await self.login(max_attempts=1):
+            return False
+        return await self._navigate_to_monthly_calendar(facility_id, area, booking_type)
+
     async def check_area_days(
         self,
         facility_id: str,
@@ -531,7 +548,8 @@ class FureaiNetScraper(BaseScraper):
             on_progress(f"{area_name} チェック開始")
 
         if not await self._navigate_to_monthly_calendar(facility_id, area, booking_type):
-            return []
+            if not await self._recover_and_navigate(facility_id, area, booking_type):
+                return []
 
         target_months = sorted({d[:7] for d in target_dates})
         results: dict = {}
@@ -582,8 +600,9 @@ class FureaiNetScraper(BaseScraper):
                             on_progress(f"{area_name} {date_str} 時間帯取得")
                         # 月間カレンダーへ戻る
                         if not await self._navigate_to_monthly_calendar(facility_id, area, booking_type):
-                            self._log(f"月間カレンダーへの復帰に失敗 ({facility_id}/{area_name})。以降の週取得を中断します")
-                            break
+                            if not await self._recover_and_navigate(facility_id, area, booking_type):
+                                self._log(f"月間カレンダーへの復帰に失敗 ({facility_id}/{area_name})。以降の週取得を中断します")
+                                break
                         await self._move_to_month(year, month)
                         cur = await self._extract_monthly_calendar()
                         if not cur.get("days"):
@@ -598,8 +617,8 @@ class FureaiNetScraper(BaseScraper):
         return list(results.values())
 
     def _log(self, msg: str):
-        self._flow_log.append({"time": datetime.utcnow().isoformat(), "msg": msg})
-        print(f"[FureaiNet] {msg}")
+        self._flow_log.append({"time": datetime.now(JST).isoformat(timespec="seconds"), "msg": msg})
+        print(f"[FureaiNet] {msg}", flush=True)
 
 
 # ──────────────────────────────────────────
@@ -607,6 +626,8 @@ class FureaiNetScraper(BaseScraper):
 # ──────────────────────────────────────────
 
 def get_target_dates(days_ahead: int = 60) -> list[str]:
-    """今日から n 日分の日付リストを返す"""
-    today = datetime.today()
+    """今日（JST基準）から n 日分の日付リストを返す。
+    GitHub Actions ランナー（UTC）で JST 7:00（UTC 22:00 前日）に実行された場合も
+    日本時間の当日を起点にする。"""
+    today = datetime.now(JST).date()
     return [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days_ahead)]

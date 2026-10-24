@@ -238,3 +238,85 @@ def test_http_request_with_retry_succeeds(monkeypatch):
     res = st._http_request_with_retry(req, timeout=5, max_retries=2)
     assert res == b'{"ok": true}'
 
+
+def test_save_and_flush_pending_notify(tmp_path, monkeypatch):
+    cfg = _cfg()
+    pending_file = tmp_path / ".pending_notify.json"
+    st._PENDING_NOTIFY.clear()
+
+    # 通知対象が無い時はファイルを作らず False
+    assert st._save_pending_notify(pending_file) is False
+    assert not pending_file.exists()
+
+    # 通知対象をキューに入れて保留保存
+    cur = {("2026-07-04", "大体育室半面Ａ", "午前"): "土"}
+    st._queue_notify(cfg, cur, cur, {})
+    assert st._save_pending_notify(pending_file) is True
+    assert pending_file.exists()
+    assert len(st._PENDING_NOTIFY) == 0
+
+    # flush_saved_notify で送信関数が呼ばれ、ファイルが消えること
+    sent = []
+    monkeypatch.setattr(
+        st,
+        "_send_broadcast_text",
+        lambda content, count, names: sent.append((content, count, names)) or True,
+    )
+    rc = st.flush_saved_notify(pending_file)
+    assert rc == 0
+    assert len(sent) == 1
+    assert sent[0][1] == 1
+    assert "高津スポーツセンター" in sent[0][2]
+    assert not pending_file.exists()
+
+
+def test_write_scrape_log_and_summary(tmp_path, monkeypatch):
+    import json
+    from datetime import datetime
+
+    log_path = tmp_path / "scrape-log.json"
+    md_path = tmp_path / ".scrape_summary.md"
+    monkeypatch.setattr(st, "SCRAPE_LOG_PATH", log_path)
+    monkeypatch.setattr(st, "SCRAPE_SUMMARY_MD_PATH", md_path)
+    monkeypatch.setattr(
+        st,
+        "_fetch_previous_scrape_log",
+        lambda: {"updatedAt": "2026-10-24T00:00:00Z", "groups": {"tennis": {"group": "tennis", "status": "ok"}}},
+    )
+
+    t0 = datetime(2026, 10, 24, 17, 0, 0, tzinfo=st.JST)
+    t1 = datetime(2026, 10, 24, 17, 5, 30, tzinfo=st.JST)
+    st.write_scrape_log_and_summary(
+        group="hall",
+        started_at=t0,
+        finished_at=t1,
+        status="ok",
+        maintenance=False,
+        facility_diags=[
+            {
+                "id": "takatsu",
+                "name": "高津スポーツセンター",
+                "status": "ok",
+                "days": 30,
+                "reservableDays": 3,
+                "okAreas": ["大体育室半面Ａ"],
+                "failedAreas": [],
+                "unknownRatio": 0.0,
+                "unknownSamples": [],
+                "notifyAdded": 1,
+                "notifyRemoved": 0,
+            }
+        ],
+        flow_log=[{"time": "2026-10-24T17:00:02+09:00", "msg": "ログイン成功"}],
+        warnings=[],
+        line_quota={"usage": 61, "limit": 200, "type": "limited"},
+    )
+
+    assert log_path.exists()
+    saved = json.loads(log_path.read_text(encoding="utf-8"))
+    # 既存の tennis グループが保持され、hall グループが追加されていること
+    assert "tennis" in saved["groups"]
+    assert saved["groups"]["hall"]["durationSec"] == 330.0
+    assert saved["groups"]["hall"]["lineQuota"]["usage"] == 61
+    assert md_path.exists()
+    assert "高津スポーツセンター" in md_path.read_text(encoding="utf-8")

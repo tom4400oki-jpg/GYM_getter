@@ -23,3 +23,8 @@ screenshots/
 # テニス調査用の一時ダンプ（コミット不要）
 tennis_html/
 tennis_html_dl/
+
+# スクレイプ実行時の一時ファイル
+.pending_notify.json
+.scrape_summary.md
+scrape_output.log

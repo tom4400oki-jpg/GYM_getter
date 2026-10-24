@@ -243,3 +243,19 @@ GitHub Actions (cron 1日8回 JST 7〜21時の2時間ごと + 手動 workflow_di
   - タブ連続切り替え時の非同期競合状態（Race condition）を `AbortController` によるキャンセルで防止。
   - LINE アプリ内ブラウザ判定リダイレクトで `URL` Web API を使用しパラメータ付与を堅牢化。
 - 検証: pytest 21件全通過、`npm run build`（tsc -b + vite build）成功、エラー0。
+
+
+## Phase 9: デプロイ403障害の解消・通知順序の適正化・診断ログコピー機能（2026-10-24 完了）
+- **Firebase Hosting デプロイ 403 障害の根本解決 (`scrape.yml`, `scrape-tennis.yml`)**:
+  - 2026-10-22 以降、`FirebaseExtended/action-hosting-deploy@v0` が既定の `firebaseToolsVersion: latest` により `firebase-tools@15.34.1` を取得し、新たに追加された `serviceusage.services.get` チェックで Hosting 用サービスアカウントが `403 Permission denied` となって全デプロイが失敗していた問題を特定。
+  - `firebaseToolsVersion: "15.34.0"`（動作確認済みバージョン）に明示ピン留めし、今後の CLI 破壊的変更によるサイレント故障を防止。
+- **LINE ブロードキャスト通知の2段階化（デプロイ反映後の送信へ変更）(`scrape_fureai.py`, `scrape.yml`, `scrape-tennis.yml`)**:
+  - 従来はスクレイプ直後（Firebase デプロイ前）に LINE 通知を送信していたため、デプロイが失敗すると「Webサイトは未更新のまま同じ差分が次回も検出され、2時間おきに同一通知が連投され続ける」問題が発生していた。
+  - `--defer-notify`（スクレイプ時は `.pending_notify.json` に保留保存）と `--flush-notify`（デプロイ反映検証の成功後にのみ LINE 送信）に分離。デプロイ失敗時は利用者通知を抑止し、`--notify-admin` で管理者へアラートを送る構成に改善。
+- **JST タイムゾーン基準への統一・自己修復リトライ (`fureai_net.py`, `base.py`)**:
+  - GitHub Actions（UTC）で JST 7:00（UTC 22:00 前日）に実行された際、`datetime.today()` が前日を返していた問題を `JST (UTC+9)` 基準に統一。
+  - Playwright のデフォルトタイムアウト明示（30s / ナビゲーション 45s）、ログインの一時エラー時リトライ、月間カレンダー遷移失敗時の再ログイン自己修復（`_recover_and_navigate`）を追加。
+- **改善ループ用・診断ログのワンタップコピー機能 (`scrape-log.json`, `diagnostics.ts`, `LogModal.tsx`, `App.tsx`)**:
+  - スクレイパーが毎実行時に `web/public/scrape-log.json`（グループ別の実行時刻・所要時間・LINE送信数・施設別成否・未知ステータス率・フローログ末尾）および `.scrape_summary.md`（GitHub Actions の `$GITHUB_STEP_SUMMARY` コードブロック出力用）を生成。
+  - フロントエンドに `LogModal`（ヘッダーの「ログ」ボタン・鮮度警告バナー・フッターの「稼働・診断ログを表示」ボタンから起動）を追加。`scrape-log.json` に加え、GitHub REST API から直近の Actions 実行結果・失敗ステップ・エラー注釈を直接取得するため、万が一デプロイが止まっている場合でも Web 画面から原因ログをワンタップでコピーしてチャットに貼り付け可能。
+- 検証: pytest 23件全通過、`npm run build`（tsc -b + vite build）成功、エラー0。
