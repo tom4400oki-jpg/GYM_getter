@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { dataSchema, dayHasReservable, isStale } from "@/lib/schema";
+import { dataSchema, dayHasReservable, isStale, STALE_HOURS } from "@/lib/schema";
 import type { FacilitiesIndex } from "@/lib/facilities";
 
 const GITHUB_REPO = "tom4400oki-jpg/GYM_getter";
@@ -17,8 +17,10 @@ const facilityDiagSchema = z.object({
   status: z.string(),
   days: z.number().default(0),
   reservableDays: z.number().default(0),
+  durationSec: z.number().nullish(),
   okAreas: z.array(z.string()).default([]),
   failedAreas: z.array(z.string()).default([]),
+  incompleteAreas: z.array(z.string()).default([]),
   unknownRatio: z.number().default(0),
   unknownSamples: z.array(z.string()).default([]),
   notifyAdded: z.number().default(0),
@@ -36,6 +38,7 @@ const groupLogSchema = z.object({
   lineQuota: lineQuotaSchema.nullish(),
   facilities: z.array(facilityDiagSchema).default([]),
   warnings: z.array(z.string()).default([]),
+  errorLogs: z.array(z.string()).default([]),
   flowLogTail: z.array(z.string()).default([]),
 });
 
@@ -372,8 +375,9 @@ export async function buildDiagnosticReport(
       const quotaStr = q
         ? ` / LINE送信数: ${q.usage ?? 0}/${q.limit ?? "unlimited"}`
         : "";
+      const runIdStr = g.runId ? ` / run=#${g.runId}` : "";
       lines.push(
-        `  ■ group=${g.group}: status=${g.status} / ${fmtJst(g.startedAt)} (${g.durationSec}s)${quotaStr}`
+        `  ■ group=${g.group}: status=${g.status} / ${fmtJst(g.startedAt)} (${g.durationSec}s)${runIdStr}${quotaStr}`
       );
       if (g.warnings.length > 0) {
         for (const w of g.warnings) {
@@ -381,17 +385,33 @@ export async function buildDiagnosticReport(
         }
       }
       for (const f of g.facilities) {
+        const durStr =
+          typeof f.durationSec === "number" ? `, ${f.durationSec}s` : "";
         const failStr =
           f.failedAreas.length > 0 ? ` [失敗:${f.failedAreas.join(",")}]` : "";
+        const incStr =
+          f.incompleteAreas.length > 0
+            ? ` [週中断:${f.incompleteAreas.join(",")}]`
+            : "";
         const unkStr =
           f.unknownRatio > 0 ? ` [unk:${Math.round(f.unknownRatio * 100)}%]` : "";
+        const diffStr =
+          f.notifyAdded > 0 || f.notifyRemoved > 0
+            ? ` [通知:+${f.notifyAdded}/-${f.notifyRemoved}]`
+            : "";
         lines.push(
-          `    - ${f.name}: ${f.status} (${f.days}日, 予約可${f.reservableDays}日)${failStr}${unkStr}`
+          `    - ${f.name}: ${f.status} (${f.days}日, 予約可${f.reservableDays}日${durStr})${failStr}${incStr}${unkStr}${diffStr}`
         );
+      }
+      if (g.errorLogs.length > 0) {
+        lines.push("    [エラー・警告ログ]");
+        for (const el of g.errorLogs.slice(-15)) {
+          lines.push(`      ${el}`);
+        }
       }
       if (g.flowLogTail.length > 0) {
         lines.push("    [スクレイパーログ末尾]");
-        for (const fl of g.flowLogTail.slice(-6)) {
+        for (const fl of g.flowLogTail.slice(-8)) {
           lines.push(`      ${fl}`);
         }
       }
@@ -401,13 +421,13 @@ export async function buildDiagnosticReport(
 
   // [3] 公開中データ鮮度
   lines.push(
-    `[3] 公開中データ鮮度 (facilities.json: ${fmtJst(ctx.index?.updatedAt)})`
+    `[3] 公開中データ鮮度 (facilities.json: ${fmtJst(ctx.index?.updatedAt)}, 閾値>${STALE_HOURS}h)`
   );
   for (const h of healthList) {
     if (h.error) {
       lines.push(`  - ${h.shortName} (${h.file}): [エラー: ${h.error}]`);
     } else {
-      const state = h.stale ? "⚠古い(>3h)" : "正常";
+      const state = h.stale ? `⚠古い(>${STALE_HOURS}h)` : "正常";
       lines.push(
         `  - ${h.shortName} (${h.file}): ${state} / 更新 ${h.updatedAt} (${h.daysCount}日, 予約可${h.reservableCount}日)`
       );

@@ -320,3 +320,58 @@ def test_write_scrape_log_and_summary(tmp_path, monkeypatch):
     assert saved["groups"]["hall"]["lineQuota"]["usage"] == 61
     assert md_path.exists()
     assert "高津スポーツセンター" in md_path.read_text(encoding="utf-8")
+
+
+# ── エリア名正規化・境界一致テスト ──────────────
+def test_match_area_link_text_handles_parentheses_and_fullwidth():
+    from backend.scrapers.fureai_net import match_area_link_text
+
+    # カルッツかわさき：括弧付き実画面表記と括弧なし設定の照合（全面とは誤一致しない）
+    assert match_area_link_text("カルッツかわさき大体育室（全面）", "大体育室半面Ａ") is False
+    assert match_area_link_text("カルッツかわさき大体育室（半面Ａ）", "大体育室半面Ａ") is True
+    assert match_area_link_text("カルッツかわさき大体育室（半面Ｂ）", "大体育室半面Ｂ") is True
+    assert match_area_link_text("カルッツかわさき小体育室", "小体育室") is True
+
+    # テニスコート：全角数字の実画面表記と半角数字設定の照合（1 が 10〜12 に誤一致しない）
+    assert match_area_link_text("等々力テニスコート等々力テニス場１", "等々力テニス場1") is True
+    assert match_area_link_text("等々力テニスコート等々力テニス場１０", "等々力テニス場1") is False
+    assert match_area_link_text("等々力テニスコート等々力テニス場１０", "等々力テニス場10") is True
+    assert match_area_link_text("富士見テニスコート富士見テニス場１２", "富士見テニス場1") is False
+    assert match_area_link_text("富士見テニスコート富士見テニス場１２", "富士見テニス場12") is True
+    assert match_area_link_text("大師テニスコート大師テニス場３", "大師テニス場3") is True
+
+    # とどろきアリーナ：サブアリーナが「サブアリーナ（全面）」に一致し「半面Ａ」には一致しない
+    assert match_area_link_text("とどろきアリーナサブアリーナ（全面）", "サブアリーナ") is True
+    assert match_area_link_text("とどろきアリーナサブアリーナ半面Ａ", "サブアリーナ") is False
+
+
+def test_overlay_previous_missing_periods_and_extract_error_logs():
+    cfg = _cfg()
+    payload = st._build_payload(
+        cfg,
+        [
+            _rec("2026-07-04", "大体育室半面Ａ", "partial", "一部空き", {}),
+            _rec("2026-07-05", "大体育室半面Ａ", "occupied", "予約あり", {}),
+        ],
+    )
+    previous = st._build_payload(
+        cfg,
+        [
+            _rec("2026-07-04", "大体育室半面Ａ", "partial", "一部空き", {"午前": "available"}),
+            _rec("2026-07-05", "大体育室半面Ａ", "available", "全て空き", {"夜間": "available"}),
+        ],
+    )
+    st._overlay_previous_missing_periods(payload, previous, ["大体育室半面Ａ"])
+    # 7/04 は日単位ステータスが同じ partial なので前回 periods が補完される
+    assert payload["days"][0]["byArea"]["大体育室半面Ａ"]["periods"] == {"午前": "available"}
+    # 7/05 は日単位ステータスが変化（available -> occupied）しているため補完しない
+    assert payload["days"][1]["byArea"]["大体育室半面Ａ"]["periods"] == {}
+
+    # エラーログ抽出：後続の info ログが大量にあっても warn/error が保持される
+    flow = (
+        [{"time": "2026-10-25T13:30:00+09:00", "level": "error", "msg": "月間カレンダー遷移エラー"}]
+        + [{"time": f"2026-10-25T13:31:{i:02d}+09:00", "level": "info", "msg": "通常ログ"} for i in range(50)]
+    )
+    errs = st._extract_error_logs(flow)
+    assert len(errs) == 1
+    assert "月間カレンダー遷移エラー" in errs[0]

@@ -259,3 +259,20 @@ GitHub Actions (cron 1日8回 JST 7〜21時の2時間ごと + 手動 workflow_di
   - スクレイパーが毎実行時に `web/public/scrape-log.json`（グループ別の実行時刻・所要時間・LINE送信数・施設別成否・未知ステータス率・フローログ末尾）および `.scrape_summary.md`（GitHub Actions の `$GITHUB_STEP_SUMMARY` コードブロック出力用）を生成。
   - フロントエンドに `LogModal`（ヘッダーの「ログ」ボタン・鮮度警告バナー・フッターの「稼働・診断ログを表示」ボタンから起動）を追加。`scrape-log.json` に加え、GitHub REST API から直近の Actions 実行結果・失敗ステップ・エラー注釈を直接取得するため、万が一デプロイが止まっている場合でも Web 画面から原因ログをワンタップでコピーしてチャットに貼り付け可能。
 - 検証: pytest 23件全通過、`npm run build`（tsc -b + vite build）成功、エラー0。
+
+## Phase 10: スクレイパー遷移最適化・エリア名正規化・改善ループ用エラーログ永続化（2026-10-26 完了）
+- **週詳細ページからの1クリック復帰 (`fureai_net.py`)**:
+  - 従来は空き日の時間帯・スロット取得後に毎回メニューから5〜6ページ遷移（`_navigate_to_monthly_calendar` + `_move_to_month`）していたため、1実行あたり数百回のリクエストが発生し Struts 側のセッション競合や遷移エラーを誘発していた。
+  - 画面上の「もどる」ボタン（`gRsvWInstSrchVacantBackAction`）で同エリア・同年月の月間カレンダーへ1クリックで直帰する `_return_to_monthly_calendar` を導入（失敗時のみメニュー再遷移→自己修復へフォールバック）。リクエスト数を約 1/6 に削減。
+- **エリア名 NFKC 正規化マッチングと `FACILITY_NAV` インデックス完全同期 (`fureai_net.py`)**:
+  - 実画面調査に基づき、`normalize_area_text` / `match_area_link_text`（NFKC全角半角統一・括弧除去・末尾数字境界判定）を導入。カルッツかわさきの括弧付き表記（`大体育室（半面Ａ）`）やテニスコートの全角数字（`等々力テニス場１〜１０` 等）に完全一致させ、不要な位置代替フォールバックと `1`→`10` 誤一致を解消。
+  - 全12施設の `FACILITY_NAV` の `index` を実画面の `sendInstNo` 順（「すべて」および全面・他施設を含む実インデックス）に同期。
+- **再ログイン自己修復の Cookie クリアと状態リセット (`fureai_net.py`)**:
+  - `login()` 冒頭で `is_logged_in = False` リセットおよび `context.clear_cookies()` を実行し、破損した `JSESSIONID` が残ってログインフォーム（`input#userId`）が出なくなる連鎖失敗を解消。ログインボタンクリック時も `expect_navigation` で遷移完了を確実に待機。
+- **週詳細の途中中断検知と前回内訳補完 (`scrape_fureai.py`)**:
+  - 週詳細ループが途中で中断した場合に `incomplete_weeks` フラグを記録し、未取得週の時間帯内訳を前回値から補完（`_overlay_previous_missing_periods`）しつつ `status="partial"`・`incompleteAreas` として可視化。
+- **cron オフピーク分散と鮮度閾値調整 (`scrape.yml`, `scrape-tennis.yml`, `schema.ts`)**:
+  - 毎時0分の GitHub Actions 混雑によるスキップを避けるため、体育館を毎時 `7` 分、テニスを毎時 `23` 分に分散。`isStale` 閾値を `4時間` に調整。
+- **改善ループ用・詳細診断ログの強化 (`scrape_fureai.py`, `diagnostics.ts`)**:
+  - 後続施設の通常ログでエラー履歴が押し出されないよう、`warn`/`error` ログを独立抽出した `errorLogs`（最大40件）と施設別所要時間（`durationSec`）を `scrape-log.json` および診断レポートに追加。遷移エラー時は URL と画面上のリンク/ボタン一覧をエラー文に含めるよう改善。
+- 検証: pytest 25件全通過、`npm run build`（tsc -b + vite build）成功、エラー0。

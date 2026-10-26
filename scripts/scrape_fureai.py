@@ -97,6 +97,9 @@ _PENDING_NOTIFY: list[tuple] = []
 # 管理者通知・警告メッセージを構造化ログにも残すためのバッファ
 _ADMIN_WARNINGS: list[str] = []
 
+# 施設別のスクレイプ所要時間（秒）を保持するマップ
+_FACILITY_DURATIONS: dict[str, float] = {}
+
 # デプロイ成功後にLINE通知を送るための一時ファイル（ビルド対象外）
 PENDING_NOTIFY_PATH = ROOT / ".pending_notify.json"
 # GitHub Actions の Job Summary 貼付用ファイル
@@ -686,6 +689,26 @@ def _overlay_previous(payload: dict, previous: dict | None, areas: list[str]) ->
                 day["byArea"][area] = prev_area
 
 
+def _overlay_previous_missing_periods(payload: dict, previous: dict | None, areas: list[str]) -> None:
+    """週詳細の取得が途中で中断したエリアについて、未取得（periods が空）かつ日単位ステータスが
+    前回と同じ日の時間帯内訳だけを前回値から補完する。"""
+    if not previous or not areas:
+        return
+    prev_by_date = {d["date"]: d for d in previous.get("days", [])}
+    for day in payload["days"]:
+        pd = prev_by_date.get(day["date"])
+        if not pd:
+            continue
+        for area in areas:
+            cur_area = day.get("byArea", {}).get(area)
+            prev_area = pd.get("byArea", {}).get(area)
+            if not (isinstance(cur_area, dict) and isinstance(prev_area, dict)):
+                continue
+            if not cur_area.get("periods") and prev_area.get("periods"):
+                if cur_area.get("status") == prev_area.get("status"):
+                    cur_area["periods"] = dict(prev_area["periods"])
+
+
 # ──────────────────────────────────────────
 # 空き通知（前回=公開中の data.json と差分を取り、新着のみ通知）
 # ──────────────────────────────────────────
@@ -1076,6 +1099,7 @@ async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, l
       results = { facility_id: by_area }。ログイン不可なら results=None。
     """
     results: dict[str, dict] = {}
+    _FACILITY_DURATIONS.clear()
     async with FureaiNetScraper(**_scraper_kwargs()) as scraper:
         if not await scraper.login():
             return None, scraper.maintenance, list(scraper._flow_log)
@@ -1083,7 +1107,9 @@ async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, l
             if not cfg.scrape_enabled:
                 continue
             print(f"--- {cfg.facility_name} 取得開始 ---", flush=True)
+            t0 = time.monotonic()
             results[cfg.facility_id] = await _collect_records(cfg, scraper)
+            _FACILITY_DURATIONS[cfg.facility_id] = round(time.monotonic() - t0, 1)
         return results, False, list(scraper._flow_log)
 
 
@@ -1098,16 +1124,28 @@ def _process_facility(
     area_names = [a["name"] for a in FACILITY_NAV[cfg.facility_id]["areas"]]
     failed = [a for a in area_names if not _area_ok(by_area.get(a, []))]
     ok_areas = [a for a in area_names if a not in failed]
+    incomplete = [
+        a
+        for a in ok_areas
+        if any(r.get("incomplete_weeks") for r in by_area.get(a, []))
+    ]
+    fac_status = (
+        "failed"
+        if not ok_areas
+        else ("partial" if (failed or incomplete) else "ok")
+    )
 
     if diag_out is not None:
         diag_out.update({
             "id": cfg.web_id,
             "name": cfg.facility_name,
-            "status": "failed" if not ok_areas else ("partial" if failed else "ok"),
+            "status": fac_status,
             "days": 0,
             "reservableDays": 0,
+            "durationSec": _FACILITY_DURATIONS.get(cfg.facility_id),
             "okAreas": ok_areas,
             "failedAreas": failed,
+            "incompleteAreas": incomplete,
             "unknownRatio": 0.0,
             "unknownSamples": [],
             "notifyAdded": 0,
@@ -1146,6 +1184,12 @@ def _process_facility(
         print(f"[{cfg.facility_name}][部分失敗] {failed} は前回値を保持（通知対象外）", flush=True)
         _notify_admin(f"{cfg.facility_name}: 一部エリア取得失敗 {failed}（該当エリアは前回値を保持）")
 
+    # 週詳細の途中中断エリアは未取得週の時間帯内訳を前回値から補完し、警告を記録
+    if incomplete:
+        _overlay_previous_missing_periods(payload, previous, incomplete)
+        print(f"[{cfg.facility_name}][週詳細中断] {incomplete} の未取得週内訳を前回値で補完", flush=True)
+        _notify_admin(f"{cfg.facility_name}: 一部エリアで週詳細取得が途中中断 {incomplete}（未取得週は前回値を補完）")
+
     n_days = len(payload["days"])
     if n_days == 0:
         print(f"[{cfg.facility_name}][警告] 取得0日。{cfg.output_filename} は更新せずスキップ", flush=True)
@@ -1179,15 +1223,20 @@ def _process_facility(
         flush=True,
     )
 
-    # ── 差分通知（取得に成功したエリアのみを母集合にする）──
+    # ── 差分通知（完全取得に成功したエリアのみを母集合にする）──
     # LINE通知は土日祝の全枠＋平日18時以降の枠を対象にする（平日昼間の変化は通知しない）。
-    new_now = _notify_filter(_reservable_keys(payload, only_areas=ok_areas))
+    notify_areas = [a for a in ok_areas if a not in incomplete]
+    if not notify_areas:
+        print(f"[{cfg.facility_name}][通知] 完全取得エリアが無いため通知スキップ", flush=True)
+        return True
+
+    new_now = _notify_filter(_reservable_keys(payload, only_areas=notify_areas))
     if previous is None or not previous.get("days"):
         # 前回が無い or 空（プレースホルダ）の場合は初回扱い。
         # 有効化直後に全枠が「新着」として大量通知されるのを防ぐ。
         print(f"[{cfg.facility_name}][通知] 前回データなし/空のため初回は通知しません", flush=True)
     else:
-        old = _notify_filter(_reservable_keys(previous, only_areas=ok_areas))
+        old = _notify_filter(_reservable_keys(previous, only_areas=notify_areas))
         added = {k: v for k, v in new_now.items() if k not in old}
         removed = {k: v for k, v in old.items() if k not in new_now}
         if diag_out is not None:
@@ -1225,6 +1274,20 @@ def _fetch_previous_scrape_log() -> dict:
     return {"updatedAt": datetime.now(timezone.utc).isoformat(), "groups": {}}
 
 
+def _extract_error_logs(flow_log: list[dict]) -> list[str]:
+    """flow_log から warn/error レベル（またはエラー系キーワードを含む）行だけを抽出する。
+    後続施設の通常ログで上書きされず、改善ループで確実に原因を特定するために保持する。"""
+    out: list[str] = []
+    error_keywords = ("エラー", "失敗", "例外", "中断", "自己修復", "代替", "不可")
+    for item in flow_log:
+        lvl = str(item.get("level") or "info").lower()
+        msg = str(item.get("msg") or "")
+        if lvl in ("warn", "error") or any(k in msg for k in error_keywords):
+            tag = f"[{lvl.upper()}] " if lvl in ("warn", "error") else ""
+            out.append(f"{item.get('time', '')} {tag}{msg}")
+    return out[-40:]
+
+
 def write_scrape_log_and_summary(
     group: str,
     started_at: datetime,
@@ -1239,6 +1302,7 @@ def write_scrape_log_and_summary(
     """構造化稼働ログ web/public/scrape-log.json と GitHub Actions 用サマリ .scrape_summary.md を出力する。"""
     duration_sec = round((finished_at - started_at).total_seconds(), 1)
     run_id = os.getenv("GITHUB_RUN_ID", "")
+    error_logs = _extract_error_logs(flow_log)
     group_entry = {
         "group": group,
         "startedAt": started_at.isoformat(timespec="seconds"),
@@ -1250,6 +1314,7 @@ def write_scrape_log_and_summary(
         "lineQuota": line_quota,
         "facilities": facility_diags,
         "warnings": warnings[:20],
+        "errorLogs": error_logs,
         "flowLogTail": [
             f"{item.get('time', '')} {item.get('msg', '')}"
             for item in flow_log[-30:]
@@ -1282,14 +1347,20 @@ def write_scrape_log_and_summary(
     if facility_diags:
         lines.append("施設別結果:")
         for fd in facility_diags:
+            dur_str = f", {fd['durationSec']}s" if fd.get("durationSec") is not None else ""
             unk_str = f" / unk={fd['unknownRatio']:.0%}" if fd.get("unknownRatio", 0) > 0 else ""
             fail_str = f" / 失敗エリア={fd['failedAreas']}" if fd.get("failedAreas") else ""
+            inc_str = f" / 週中断エリア={fd['incompleteAreas']}" if fd.get("incompleteAreas") else ""
             diff_str = ""
             if fd.get("notifyAdded") or fd.get("notifyRemoved"):
                 diff_str = f" / 通知差分(+{fd['notifyAdded']}, -{fd['notifyRemoved']})"
             lines.append(
-                f"  - {fd['name']}: {fd['status']} ({fd['days']}日, 予約可{fd['reservableDays']}日{unk_str}{fail_str}{diff_str})"
+                f"  - {fd['name']}: {fd['status']} ({fd['days']}日, 予約可{fd['reservableDays']}日{dur_str}{unk_str}{fail_str}{inc_str}{diff_str})"
             )
+    if error_logs:
+        lines.append("エラー・警告ログ:")
+        for el in error_logs[-20:]:
+            lines.append(f"  {el}")
     if flow_log:
         lines.append("スクレイパーログ末尾:")
         for item in flow_log[-10:]:

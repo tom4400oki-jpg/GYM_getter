@@ -30,8 +30,11 @@ export const dataSchema = z.object({
 export const FALLBACK_RESERVE_URL =
   "https://www.fureai-net.city.kawasaki.jp/user/view/user/homeIndex.html";
 
-/** updatedAt が古い（既定3時間超）かどうか。サイレント故障の利用者向けセーフティネット */
-export function isStale(iso: string, maxAgeMs = 3 * 60 * 60 * 1000): boolean {
+/** updatedAt が古いとみなす閾値（時間）。2時間周期の cron が1回遅延・スキップされても誤警告にならないよう4時間に設定 */
+export const STALE_HOURS = 4;
+
+/** updatedAt が古い（既定4時間超）かどうか。サイレント故障の利用者向けセーフティネット */
+export function isStale(iso: string, maxAgeMs = STALE_HOURS * 60 * 60 * 1000): boolean {
   const t = new Date(iso).getTime();
   if (isNaN(t)) return false;
   return Date.now() - t > maxAgeMs;
