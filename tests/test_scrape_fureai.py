@@ -375,3 +375,18 @@ def test_overlay_previous_missing_periods_and_extract_error_logs():
     errs = st._extract_error_logs(flow)
     assert len(errs) == 1
     assert "月間カレンダー遷移エラー" in errs[0]
+
+
+def test_is_night_maintenance_window():
+    from datetime import datetime
+    jst = st.JST
+    # 深夜時間帯 (0:00〜06:29) は True
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 0, 0, tzinfo=jst)) is True
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 1, 34, tzinfo=jst)) is True
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 6, 29, tzinfo=jst)) is True
+    # 稼働時間帯 (06:30〜23:59) は False
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 6, 30, tzinfo=jst)) is False
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 7, 7, tzinfo=jst)) is False
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 21, 0, tzinfo=jst)) is False
+    assert st.is_night_maintenance_window(datetime(2026, 10, 29, 23, 59, tzinfo=jst)) is False
+

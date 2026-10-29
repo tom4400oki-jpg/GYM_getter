@@ -1372,6 +1372,14 @@ def write_scrape_log_and_summary(
         pass
 
 
+def is_night_maintenance_window(now: datetime | None = None) -> bool:
+    """ふれあいネットの夜間休止時間帯（0:00〜06:30 JST）か判定する。
+    川崎市ふれあいネットは夜間にログイン機能を停止しており、
+    Actions の遅延等でこの時間帯に起動した場合は通信やブラウザ起動を行わず即時スキップする。"""
+    cur = (now or datetime.now(JST)).astimezone(JST)
+    return cur.hour < 6 or (cur.hour == 6 and cur.minute < 30)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ふれあいネット空き確認スクレイパー")
     parser.add_argument(
@@ -1399,13 +1407,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.flush_notify:
         return flush_saved_notify()
 
-    defer_notify = args.defer_notify or (
-        os.getenv("DEFER_NOTIFY", "").strip().lower() in ("1", "true", "yes")
-    )
-
+    force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
     started_at = datetime.now(JST)
     _ADMIN_WARNINGS.clear()
     print(f"=== ふれあいネット 空き確認 開始 {started_at:%Y-%m-%d %H:%M:%S} (JST) ===", flush=True)
+
+    if is_night_maintenance_window(started_at) and not force:
+        msg = f"ふれあいネット夜間メンテナンス時間帯（JST {started_at.strftime('%H:%M')}）のためスクレイプをスキップ（既存データ維持）"
+        print(f"[メンテ] {msg}", flush=True)
+        print(f"::notice title=GYM Getter::{msg}", flush=True)
+        _set_output("deploy", "false")
+        return 0
+
+    defer_notify = args.defer_notify or (
+        os.getenv("DEFER_NOTIFY", "").strip().lower() in ("1", "true", "yes")
+    )
 
     # 施設タブ・料金・時刻のメタをフロントへ渡す（毎回生成＝FACILITIES が単一の真実）
     write_facilities_index()
@@ -1467,7 +1483,9 @@ def main(argv: list[str] | None = None) -> int:
                 _set_output("deploy", "true")
                 return 0
             _set_output("deploy", "false")
-            print("[メンテ] ふれあいネットのログイン機能停止中。各 data.json は維持して終了", flush=True)
+            notice_msg = "ふれあいネット夜間メンテナンス時間（ログイン機能停止中）のため既存データを維持して終了しました"
+            print(f"::notice title=GYM Getter::{notice_msg}", flush=True)
+            print(f"[メンテ] {notice_msg}", flush=True)
             return 0
         _set_output("deploy", "false")
         # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
@@ -1521,6 +1539,9 @@ def main(argv: list[str] | None = None) -> int:
         warnings=list(_ADMIN_WARNINGS),
         line_quota=line_quota,
     )
+
+    if not any_deploy:
+        print("::notice title=GYM Getter::全施設で空き状況に変化がないためデプロイをスキップしました", flush=True)
 
     _set_output("deploy", "true" if any_deploy else "false")
     return 0

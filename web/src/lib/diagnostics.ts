@@ -136,6 +136,7 @@ type GhRunSummary = {
   status: string;
   conclusion: string;
   createdAt: string;
+  deploySkipped: boolean;
   failedSteps: string[];
   annotations: string[];
 };
@@ -162,16 +163,21 @@ async function fetchGitHubRuns(signal?: AbortSignal): Promise<{
     }
 
     const rawRuns = parsed.data.workflow_runs;
-    // 直近で失敗した run（最大2件）のみジョブ詳細と注釈を追加取得する
-    let failChecked = 0;
+    // 最新2件および失敗した run（合計最大3件まで）のジョブ詳細・注釈を追加取得する
+    let detailChecked = 0;
     const summaries: GhRunSummary[] = [];
 
-    for (const r of rawRuns) {
+    for (let idx = 0; idx < rawRuns.length; idx++) {
+      const r = rawRuns[idx];
       const failedSteps: string[] = [];
       const annotations: string[] = [];
+      let deploySkipped = false;
 
-      if (r.conclusion === "failure" && failChecked < 2) {
-        failChecked++;
+      const shouldCheckDetail =
+        (idx < 2 || r.conclusion === "failure") && detailChecked < 3;
+
+      if (shouldCheckDetail) {
+        detailChecked++;
         try {
           const jRes = await fetch(
             `https://api.github.com/repos/${GITHUB_REPO}/actions/runs/${r.id}/jobs`,
@@ -189,6 +195,13 @@ async function fetchGitHubRuns(signal?: AbortSignal): Promise<{
                   if (s.conclusion === "failure") {
                     failedSteps.push(s.name);
                   }
+                  if (
+                    (s.name.includes("Web ビルド") ||
+                      s.name.includes("Firebase Hosting へデプロイ")) &&
+                    s.conclusion === "skipped"
+                  ) {
+                    deploySkipped = true;
+                  }
                 }
                 const aRes = await fetch(
                   `https://api.github.com/repos/${GITHUB_REPO}/check-runs/${job.id}/annotations`,
@@ -202,7 +215,12 @@ async function fetchGitHubRuns(signal?: AbortSignal): Promise<{
                   const aParsed = ghAnnotationsListSchema.safeParse(await aRes.json());
                   if (aParsed.success) {
                     for (const a of aParsed.data) {
-                      if (a.annotation_level === "failure" || a.title === "GYM Getter") {
+                      if (
+                        a.annotation_level === "failure" ||
+                        a.annotation_level === "warning" ||
+                        a.annotation_level === "notice" ||
+                        a.title === "GYM Getter"
+                      ) {
                         const firstLine = a.message.split("\n")[0] ?? a.message;
                         annotations.push(
                           `[${a.annotation_level ?? "info"}] ${firstLine.slice(0, 160)}`
@@ -225,6 +243,7 @@ async function fetchGitHubRuns(signal?: AbortSignal): Promise<{
         status: r.status ?? "unknown",
         conclusion: r.conclusion ?? "running",
         createdAt: fmtJst(r.created_at),
+        deploySkipped,
         failedSteps,
         annotations: [...new Set(annotations)],
       });
@@ -346,7 +365,7 @@ export async function buildDiagnosticReport(
     for (const r of ghRes.runs) {
       const mark =
         r.conclusion === "success"
-          ? "OK"
+          ? (r.deploySkipped ? "OK(デプロイスキップ)" : "OK")
           : r.conclusion === "failure"
             ? "NG"
             : r.status;
@@ -420,8 +439,12 @@ export async function buildDiagnosticReport(
   lines.push("");
 
   // [3] 公開中データ鮮度
+  const latestRun = ghRes.runs[0];
+  const skipNote = latestRun?.deploySkipped
+    ? " ※直近実行でデプロイスキップされたため前回データを維持中"
+    : "";
   lines.push(
-    `[3] 公開中データ鮮度 (facilities.json: ${fmtJst(ctx.index?.updatedAt)}, 閾値>${STALE_HOURS}h)`
+    `[3] 公開中データ鮮度 (facilities.json: ${fmtJst(ctx.index?.updatedAt)}, 閾値>${STALE_HOURS}h)${skipNote}`
   );
   for (const h of healthList) {
     if (h.error) {
