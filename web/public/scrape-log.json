@@ -1,4 +1,284 @@
 {
-  "updatedAt": "2026-10-24T08:00:00+00:00",
-  "groups": {}
+  "updatedAt": "2026-10-28T08:49:47.444402+00:00",
+  "groups": {
+    "hall": {
+      "group": "hall",
+      "startedAt": "2026-10-28T17:20:35+09:00",
+      "finishedAt": "2026-10-28T17:24:46+09:00",
+      "durationSec": 251.4,
+      "status": "ok",
+      "maintenance": false,
+      "runId": "40656033372",
+      "lineQuota": {
+        "usage": 70,
+        "limit": 200,
+        "type": "limited"
+      },
+      "facilities": [
+        {
+          "id": "takatsu",
+          "name": "高津スポーツセンター",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 1,
+          "durationSec": 44.8,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ",
+            "小体育室"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "miyamae",
+          "name": "宮前スポーツセンター",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 27.4,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "saiwai",
+          "name": "幸スポーツセンター",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 47.5,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ",
+            "小体育室"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 1,
+          "notifyRemoved": 1
+        },
+        {
+          "id": "asao",
+          "name": "麻生スポーツセンター",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 21.6,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "tama",
+          "name": "多摩スポーツセンター（体育館）",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 33.4,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 2
+        },
+        {
+          "id": "culttz",
+          "name": "カルッツかわさき",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 35.5,
+          "okAreas": [
+            "大体育室半面Ａ",
+            "大体育室半面Ｂ",
+            "小体育室"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "plaza",
+          "name": "川崎市民プラザ",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 0,
+          "durationSec": 11.0,
+          "okAreas": [
+            "体育館"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "todoroki",
+          "name": "とどろきアリーナ",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 1,
+          "durationSec": 21.6,
+          "okAreas": [
+            "メインアリーナ",
+            "サブアリーナ"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        }
+      ],
+      "warnings": [],
+      "errorLogs": [],
+      "flowLogTail": [
+        "2026-10-28T17:20:43+09:00 ログイン成功: https://www.fureai-net.city.kawasaki.jp/web/rsvWUserAttestationAction.do"
+      ]
+    },
+    "tennis": {
+      "group": "tennis",
+      "startedAt": "2026-10-28T17:43:12+09:00",
+      "finishedAt": "2026-10-28T17:49:47+09:00",
+      "durationSec": 395.3,
+      "status": "ok",
+      "maintenance": false,
+      "runId": "40658759954",
+      "lineQuota": {
+        "usage": 71,
+        "limit": 200,
+        "type": "limited"
+      },
+      "facilities": [
+        {
+          "id": "tennis",
+          "name": "等々力テニスコート",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 0,
+          "durationSec": 86.3,
+          "okAreas": [
+            "等々力テニス場1",
+            "等々力テニス場2",
+            "等々力テニス場3",
+            "等々力テニス場4",
+            "等々力テニス場5",
+            "等々力テニス場6",
+            "等々力テニス場7",
+            "等々力テニス場8",
+            "等々力テニス場9",
+            "等々力テニス場10"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "fujimi",
+          "name": "富士見テニスコート",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 18,
+          "durationSec": 248.1,
+          "okAreas": [
+            "富士見テニス場1",
+            "富士見テニス場2",
+            "富士見テニス場3",
+            "富士見テニス場4",
+            "富士見テニス場5",
+            "富士見テニス場6",
+            "富士見テニス場7",
+            "富士見テニス場8",
+            "富士見テニス場9",
+            "富士見テニス場10",
+            "富士見テニス場11",
+            "富士見テニス場12"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "daishi",
+          "name": "大師テニスコート",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 2,
+          "durationSec": 31.4,
+          "okAreas": [
+            "大師テニス場1",
+            "大師テニス場2",
+            "大師テニス場3"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        },
+        {
+          "id": "tamatennis",
+          "name": "多摩スポーツセンター（テニス）",
+          "status": "ok",
+          "days": 30,
+          "reservableDays": 1,
+          "durationSec": 20.2,
+          "okAreas": [
+            "テニス場Ａ",
+            "テニス場Ｂ"
+          ],
+          "failedAreas": [],
+          "incompleteAreas": [],
+          "unknownRatio": 0.0,
+          "unknownSamples": [],
+          "notifyAdded": 0,
+          "notifyRemoved": 0
+        }
+      ],
+      "warnings": [],
+      "errorLogs": [],
+      "flowLogTail": [
+        "2026-10-28T17:43:19+09:00 ログイン成功: https://www.fureai-net.city.kawasaki.jp/web/rsvWUserAttestationAction.do"
+      ]
+    }
+  }
 }

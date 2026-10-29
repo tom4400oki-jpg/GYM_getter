@@ -2,7 +2,7 @@
   "facility": "富士見テニスコート",
   "bookingType": "reservation",
   "reserveUrl": "https://www.fureai-net.city.kawasaki.jp/user/view/user/homeIndex.html",
-  "updatedAt": "2026-06-03T00:00:00+00:00",
+  "updatedAt": "2026-10-28T08:49:47.258316+00:00",
   "areas": [
     "富士見テニス場1",
     "富士見テニス場2",
@@ -17,6 +17,3963 @@
     "富士見テニス場11",
     "富士見テニス場12"
   ],
-  "periodOrder": ["9:00", "11:00", "13:00", "15:00", "17:00", "18:30"],
-  "days": []
+  "periodOrder": [
+    "9:00",
+    "11:00",
+    "13:00",
+    "15:00",
+    "17:00",
+    "18:30"
+  ],
+  "days": [
+    {
+      "date": "2026-10-28",
+      "weekday": "水",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年10月28日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年10月28日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年10月28日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年10月28日一部空き",
+          "periods": {
+            "9:00": "available",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        }
+      }
+    },
+    {
+      "date": "2026-10-29",
+      "weekday": "木",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年10月29日一部空き",
+          "periods": {
+            "9:00": "available",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年10月29日一部空き",
+          "periods": {
+            "9:00": "available",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年10月29日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年10月29日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年10月29日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-10-30",
+      "weekday": "金",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "available",
+            "13:00": "available",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年10月30日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-10-31",
+      "weekday": "土",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-01",
+      "weekday": "日",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-02",
+      "weekday": "月",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月2日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "weekday": "火",
+      "isHoliday": true,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-04",
+      "weekday": "水",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月4日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月4日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "partial",
+          "statusRaw": "2026年11月4日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月4日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月4日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "weekday": "木",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "available",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "available",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月5日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-06",
+      "weekday": "金",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月6日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-07",
+      "weekday": "土",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-08",
+      "weekday": "日",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-09",
+      "weekday": "月",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-10",
+      "weekday": "火",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月10日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-11",
+      "weekday": "水",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月11日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月11日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月11日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月11日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-12",
+      "weekday": "木",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月12日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-13",
+      "weekday": "金",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "partial",
+          "statusRaw": "2026年11月13日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "available",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年11月13日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月13日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月13日一部空き",
+          "periods": {
+            "9:00": "available",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-14",
+      "weekday": "土",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-15",
+      "weekday": "日",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-16",
+      "weekday": "月",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月16日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月16日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月16日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月16日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月16日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-17",
+      "weekday": "火",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月17日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "weekday": "水",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月18日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-19",
+      "weekday": "木",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月19日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-20",
+      "weekday": "金",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月20日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-21",
+      "weekday": "土",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-22",
+      "weekday": "日",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-23",
+      "weekday": "月",
+      "isHoliday": true,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-24",
+      "weekday": "火",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場2": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場5": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場7": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場8": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {}
+        },
+        "富士見テニス場10": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "closed",
+          "statusRaw": "保守日・主催事業",
+          "periods": {
+            "9:00": "closed",
+            "11:00": "closed",
+            "13:00": "closed",
+            "15:00": "closed",
+            "17:00": "closed",
+            "18:30": "closed"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-25",
+      "weekday": "水",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "available",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場9": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月25日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-26",
+      "weekday": "木",
+      "isHoliday": false,
+      "byArea": {
+        "富士見テニス場1": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場2": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場3": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場4": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場5": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場6": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場7": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場8": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {}
+        },
+        "富士見テニス場9": {
+          "status": "occupied",
+          "statusRaw": "予約あり",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "occupied",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場10": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場11": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "occupied",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        },
+        "富士見テニス場12": {
+          "status": "partial",
+          "statusRaw": "2026年11月26日一部空き",
+          "periods": {
+            "9:00": "occupied",
+            "11:00": "occupied",
+            "13:00": "occupied",
+            "15:00": "closed",
+            "17:00": "available",
+            "18:30": "occupied"
+          }
+        }
+      }
+    }
+  ]
 }
