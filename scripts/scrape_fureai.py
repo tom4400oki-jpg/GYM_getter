@@ -1488,6 +1488,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[メンテ] {notice_msg}", flush=True)
             return 0
         _set_output("deploy", "false")
+        if scraper.account_locked:
+            lock_msg = "【要対応】ふれあいネットのアカウントが「利用停止中(ログイン失敗)」のためスクレイプを中断しました。ふれあいネット公式サイトからアカウントロック解除を行ってください。"
+            print(f"::error title=アカウント利用停止中::{lock_msg}", flush=True)
+            print(f"[利用停止] {lock_msg}", flush=True)
+            _notify_admin("🚨 GYM Getter 異常: アカウント利用停止中 (ふれあいネット側でロック解除が必要です)")
+            write_scrape_log_and_summary(
+                group=group,
+                started_at=started_at,
+                finished_at=finished_at,
+                status="error",
+                maintenance=False,
+                facility_diags=[],
+                flow_log=flow_log,
+                warnings=list(_ADMIN_WARNINGS),
+                line_quota=line_quota,
+            )
+            return 1
+
         # 真のログイン失敗（認証情報・サイト異常）→ 詳細な原因を抽出して管理者通知＋ジョブ失敗
         detail_msg = ""
         for item in reversed(flow_log):

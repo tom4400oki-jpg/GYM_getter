@@ -216,6 +216,7 @@ class FureaiNetScraper(BaseScraper):
         self.security_no = security_no
         self.is_logged_in = False
         self.maintenance = False  # ログイン機能停止（メンテ時間）を検出したら True
+        self.account_locked = False  # アカウント利用停止・ロックを検出したら True
         self._flow_log: list[dict] = []
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -233,6 +234,7 @@ class FureaiNetScraper(BaseScraper):
     async def login(self, max_attempts: int = 3) -> bool:
         """ログイン。成功したら True を返す。一時的な通信エラー時はリトライする。"""
         self.is_logged_in = False
+        self.account_locked = False
         if not (self.user_id and self.password):
             self._log("ログイン情報未設定（user_id / password が必要）", level="error")
             return False
@@ -327,10 +329,27 @@ class FureaiNetScraper(BaseScraper):
                     reason_str = " / ".join(fail_reasons) if fail_reasons else f"URL={self.page.url}, title={page_title}"
                     self._log(f"ログイン未完了 (試行 {attempt}/{max_attempts}): {reason_str}", level="warn")
 
+                    # 致命的認証エラー（利用停止中・認証情報誤り）の検出：無駄なリトライを即時中止し、連続失敗によるロック悪化を防止
+                    all_fail_str = f"{' '.join(dialog_messages)} {err_match} {body_txt}"
+                    if "利用停止" in all_fail_str or "ロック" in all_fail_str:
+                        self._log("致命的エラー: アカウントが利用停止中（ロック）のためリトライを中止します", level="error")
+                        self.account_locked = True
+                        self.is_logged_in = False
+                        return False
+                    if any(w in all_fail_str for w in ("パスワードが違", "暗証番号が違", "利用者番号が登録されて")):
+                        self._log("致命的エラー: 認証情報が正しくないためリトライを中止します（連続失敗によるロック防止）", level="error")
+                        self.is_logged_in = False
+                        return False
+
                 except Exception as e:
                     self.is_logged_in = False
                     diag_info = f" (ダイアログ: {'; '.join(dialog_messages)})" if dialog_messages else ""
                     self._log(f"ログイン例外 (試行 {attempt}/{max_attempts}): {type(e).__name__}: {e}{diag_info}", level="warn")
+                    all_diag = " ".join(dialog_messages)
+                    if "利用停止" in all_diag or "ロック" in all_diag:
+                        self._log("致命的エラー: アカウントが利用停止中（ロック）のためリトライを中止します", level="error")
+                        self.account_locked = True
+                        return False
 
                 if attempt < max_attempts:
                     await asyncio.sleep(2 * attempt + 1)

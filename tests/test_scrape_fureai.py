@@ -390,3 +390,12 @@ def test_is_night_maintenance_window():
     assert st.is_night_maintenance_window(datetime(2026, 10, 29, 21, 0, tzinfo=jst)) is False
     assert st.is_night_maintenance_window(datetime(2026, 10, 29, 23, 59, tzinfo=jst)) is False
 
+
+def test_fureai_scraper_init_properties():
+    from backend.scrapers.fureai_net import FureaiNetScraper
+    scraper = FureaiNetScraper(user_id="dummy", password="pw")
+    assert scraper.is_logged_in is False
+    assert scraper.maintenance is False
+    assert scraper.account_locked is False
+
+
