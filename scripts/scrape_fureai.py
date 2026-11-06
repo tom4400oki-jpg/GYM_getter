@@ -1488,8 +1488,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[メンテ] {notice_msg}", flush=True)
             return 0
         _set_output("deploy", "false")
-        # 真のログイン失敗（認証情報・サイト異常）→ 管理者通知＋ジョブ失敗
-        _notify_admin("ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）")
+        # 真のログイン失敗（認証情報・サイト異常）→ 詳細な原因を抽出して管理者通知＋ジョブ失敗
+        detail_msg = ""
+        for item in reversed(flow_log):
+            lvl = item.get("level", "")
+            msg = item.get("msg", "")
+            if lvl in ("warn", "error") and ("ログイン" in msg or "ダイアログ" in msg or "エラー" in msg or "例外" in msg):
+                detail_msg = msg
+                break
+        admin_alert = f"ログイン失敗: {detail_msg}" if detail_msg else "ログイン失敗（認証情報の確認、またはサイト構造変化の可能性）"
+        _notify_admin(admin_alert)
         write_scrape_log_and_summary(
             group=group,
             started_at=started_at,

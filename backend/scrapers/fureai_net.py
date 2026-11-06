@@ -218,71 +218,145 @@ class FureaiNetScraper(BaseScraper):
         self.maintenance = False  # ログイン機能停止（メンテ時間）を検出したら True
         self._flow_log: list[dict] = []
 
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if self.is_logged_in:
+                await self.logout()
+        except Exception:
+            pass
+        await super().__aexit__(exc_type, exc_val, exc_tb)
+
     # ──────────────────────────────────────────
-    # ログイン
+    # ログイン / ログアウト
     # ──────────────────────────────────────────
 
-    async def login(self, max_attempts: int = 2) -> bool:
+    async def login(self, max_attempts: int = 3) -> bool:
         """ログイン。成功したら True を返す。一時的な通信エラー時はリトライする。"""
         self.is_logged_in = False
         if not (self.user_id and self.password):
             self._log("ログイン情報未設定（user_id / password が必要）", level="error")
             return False
 
-        for attempt in range(1, max_attempts + 1):
+        dialog_messages: list[str] = []
+
+        async def _on_dialog(dialog):
+            msg = dialog.message
+            dialog_messages.append(msg)
+            self._log(f"ダイアログ検知: {msg}", level="warn")
             try:
-                # 再ログイン時に壊れた Struts セッション (JSESSIONID) が残っていると
-                # ログインフォームが表示されないことがあるため Cookie をクリアする
+                await dialog.accept()
+            except Exception:
+                pass
+
+        self.page.on("dialog", _on_dialog)
+
+        try:
+            for attempt in range(1, max_attempts + 1):
                 try:
-                    await self.page.context.clear_cookies()
-                except Exception:
-                    pass
+                    dialog_messages.clear()
+                    # 再ログイン時に壊れた Struts セッション (JSESSIONID) が残っていると
+                    # ログインフォームが表示されないことがあるため Cookie をクリアする
+                    try:
+                        await self.page.context.clear_cookies()
+                    except Exception:
+                        pass
 
-                await self.page.goto(TOP_URL, wait_until="networkidle")
-                await self.page.fill("input#userId", self.user_id)
-                await self.page.fill("input#pass", self.password)
-                if self.security_no:
-                    await self.page.fill("input#securityNo", self.security_no)
-                async with self.page.expect_navigation(wait_until="networkidle"):
-                    await self.page.click("input[type='submit'][value='ログイン']")
+                    self._log(f"ログイン試行 {attempt}/{max_attempts}: {TOP_URL} へ移動")
+                    # 外部バナー等の読込待ちでタイムアウトしないよう domcontentloaded を使用
+                    await self.page.goto(TOP_URL, wait_until="domcontentloaded", timeout=25000)
 
-                # ログイン成功判定：URLが変わっていれば成功
-                success = self.page.url != TOP_URL
-                if not success:
-                    # ログアウトボタンがあれば成功
-                    success = await self.page.locator("input[value='ログアウト']").count() > 0
+                    user_id_input = self.page.locator("input#userId")
+                    await user_id_input.wait_for(state="visible", timeout=15000)
 
-                # メンテ時間（ログイン機能停止）/エラー画面の検出
-                if success:
+                    await self.page.fill("input#userId", self.user_id)
+                    await self.page.fill("input#pass", self.password)
+                    if self.security_no:
+                        await self.page.fill("input#securityNo", self.security_no)
+
+                    login_btn = self.page.locator("input[type='submit'][value='ログイン']")
+                    async with self.page.expect_navigation(wait_until="domcontentloaded", timeout=25000):
+                        await login_btn.click()
+
+                    # ログアウトボタンまたは予約メニューの存在でログイン成功を確実に判定
+                    has_logout = await self.page.locator("input[value='ログアウト']").count() > 0
+                    has_menu = (
+                        await self.page.locator("a:has-text('予約')").count() > 0
+                        or await self.page.locator("a:has-text('抽選')").count() > 0
+                    )
+
+                    page_title = ""
+                    body_txt = ""
                     try:
                         page_title = await self.page.title()
                         body_txt = await self.page.evaluate(
                             "() => document.body ? document.body.innerText : ''"
                         )
                     except Exception:
-                        page_title, body_txt = "", ""
-                    if "ログイン機能停止" in body_txt or "エラー画面" in page_title:
+                        pass
+
+                    # メンテ時間（ログイン機能停止）の検出
+                    if "ログイン機能停止" in body_txt or "メンテナンス" in body_txt:
                         self._log("ログイン不可: ふれあいネットのメンテナンス時間（ログイン機能停止）", level="warn")
                         self.maintenance = True
                         self.is_logged_in = False
                         return False
 
-                self.is_logged_in = success
-                if self.is_logged_in:
-                    self._log(f"ログイン成功: {self.page.url}")
-                    # 「伝言表示画面」（メッセージ確認ページ）が出たら「次へ」で突破
-                    await self._dismiss_message_if_present()
-                    return True
+                    # エラー画面検知
+                    if "エラー画面" in page_title or "システム異常" in body_txt:
+                        self._log(f"ログイン先でエラー画面検知: title={page_title}", level="warn")
 
-                self._log(f"ログイン失敗 (試行 {attempt}/{max_attempts}): {self.page.url}", level="warn")
-            except Exception as e:
-                self.is_logged_in = False
-                self._log(f"ログイン例外 (試行 {attempt}/{max_attempts}): {e}", level="warn")
+                    # 認証成功判定（ログアウトボタンがある、または認証画面以外のページでメニューがある）
+                    if has_logout or (has_menu and "認証画面" not in page_title):
+                        self.is_logged_in = True
+                        self._log(f"ログイン成功: {self.page.url}")
+                        # 「伝言表示画面」（メッセージ確認ページ）が出たら「次へ」で突破
+                        await self._dismiss_message_if_present()
+                        return True
 
-            if attempt < max_attempts:
-                await asyncio.sleep(2)
+                    # ログイン失敗の理由を収集
+                    fail_reasons = []
+                    if dialog_messages:
+                        fail_reasons.append(f"ダイアログ: {'; '.join(dialog_messages)}")
+                    err_match = await self.page.evaluate("""() => {
+                        const err = document.querySelector('#error, .errormsg, font[color=red]');
+                        return err ? err.innerText.trim() : '';
+                    }""")
+                    if err_match:
+                        fail_reasons.append(f"画面メッセージ: {err_match}")
+
+                    reason_str = " / ".join(fail_reasons) if fail_reasons else f"URL={self.page.url}, title={page_title}"
+                    self._log(f"ログイン未完了 (試行 {attempt}/{max_attempts}): {reason_str}", level="warn")
+
+                except Exception as e:
+                    self.is_logged_in = False
+                    diag_info = f" (ダイアログ: {'; '.join(dialog_messages)})" if dialog_messages else ""
+                    self._log(f"ログイン例外 (試行 {attempt}/{max_attempts}): {type(e).__name__}: {e}{diag_info}", level="warn")
+
+                if attempt < max_attempts:
+                    await asyncio.sleep(2 * attempt + 1)
+        finally:
+            try:
+                self.page.remove_listener("dialog", _on_dialog)
+            except Exception:
+                pass
 
         return False
+
+    async def logout(self) -> None:
+        """明示的にログアウトしてサーバー側の Struts セッションを解放する"""
+        if not self.is_logged_in or not self.page:
+            return
+        try:
+            logout_btn = self.page.locator("input[value='ログアウト']")
+            if await logout_btn.count() > 0:
+                self._log("ログアウト処理を実行中...")
+                async with self.page.expect_navigation(wait_until="domcontentloaded", timeout=10000):
+                    await logout_btn.first.click()
+                self._log("ログアウト完了（Strutsセッション解放）")
+        except Exception as e:
+            self._log(f"ログアウトスキップまたは例外: {e}", level="warn")
+        finally:
+            self.is_logged_in = False
 
     async def _dismiss_message_if_present(self) -> None:
         """「伝言表示画面」など確認ページの「次へ」ボタンを押してメニューへ進む"""
@@ -294,7 +368,7 @@ class FureaiNetScraper(BaseScraper):
             if not next_btn:
                 break
             self._log(f"確認ページを突破: {self.page.url}")
-            async with self.page.expect_navigation(wait_until="networkidle"):
+            async with self.page.expect_navigation(wait_until="domcontentloaded", timeout=15000):
                 await self.page.evaluate(
                     "() => { const b = document.querySelector('input[value=\"次へ\"]'); if(b) b.click(); }"
                 )
