@@ -399,3 +399,54 @@ def test_fureai_scraper_init_properties():
     assert scraper.account_locked is False
 
 
+def test_main_handles_account_locked_gracefully(monkeypatch, tmp_path):
+    monkeypatch.setattr(st, "is_night_maintenance_window", lambda *a, **kw: False)
+    monkeypatch.setattr(st, "write_facilities_index", lambda *a, **kw: None)
+    monkeypatch.setattr(st, "_fetch_previous", lambda *a, **kw: None)
+    monkeypatch.setattr(st, "_notify_admin", lambda *a, **kw: None)
+    dummy_summary = tmp_path / ".scrape_summary.md"
+    dummy_log = tmp_path / "scrape-log.json"
+    monkeypatch.setattr(st, "SCRAPE_SUMMARY_MD_PATH", dummy_summary)
+    monkeypatch.setattr(st, "SCRAPE_LOG_PATH", dummy_log)
+
+    # 4タプルで account_locked=True を返す
+    async def fake_collect_all(cfgs):
+        return None, False, [{"msg": "致命的エラー: アカウントが利用停止中（ロック）のためリトライを中止します"}], True
+
+    monkeypatch.setattr(st, "_collect_all", fake_collect_all)
+
+    # NameError なく正常終了 (exit 0) すること
+    ret = st.main([])
+    assert ret == 0
+
+    assert dummy_summary.exists()
+    summary_content = dummy_summary.read_text(encoding="utf-8")
+    assert "ステータス: account_locked" in summary_content
+    assert "アカウントが「利用停止中(ログイン失敗)」" in summary_content
+
+
+def test_main_handles_account_locked_fallback_from_flow_log(monkeypatch, tmp_path):
+    monkeypatch.setattr(st, "is_night_maintenance_window", lambda *a, **kw: False)
+    monkeypatch.setattr(st, "write_facilities_index", lambda *a, **kw: None)
+    monkeypatch.setattr(st, "_fetch_previous", lambda *a, **kw: None)
+    monkeypatch.setattr(st, "_notify_admin", lambda *a, **kw: None)
+    dummy_summary = tmp_path / ".scrape_summary.md"
+    dummy_log = tmp_path / "scrape-log.json"
+    monkeypatch.setattr(st, "SCRAPE_SUMMARY_MD_PATH", dummy_summary)
+    monkeypatch.setattr(st, "SCRAPE_LOG_PATH", dummy_log)
+
+    # 3タプル（古い形式）でも flow_log に「利用停止」が含まれていれば検知
+    async def fake_collect_all(cfgs):
+        return None, False, [{"msg": "ダイアログ検知: 利用停止中(ログイン失敗)のため、ログインできません。"}]
+
+    monkeypatch.setattr(st, "_collect_all", fake_collect_all)
+
+    ret = st.main([])
+    assert ret == 0
+
+    assert dummy_summary.exists()
+    summary_content = dummy_summary.read_text(encoding="utf-8")
+    assert "ステータス: account_locked" in summary_content
+
+
+
