@@ -286,3 +286,14 @@ GitHub Actions (cron 1日8回 JST 7〜21時の2時間ごと + 手動 workflow_di
   - スクレイパーの `account_locked` フラグを検知し、GitHub Actions 注釈に `::error title=アカウント利用停止中::` を発行するとともに、LINE管理者通知に「🚨 GYM Getter 異常: アカウント利用停止中 (ふれあいネット側でロック解除が必要です)」と専用メッセージを送信。
 - 検証: pytest 26件全通過、`npm run build` 正常終了。
 
+## Phase 12: NameError 修正とアカウントロック時のエラーメール大量送信抑止（2026-11-07 完了）
+- **NameError バグの解消 (`scrape_fureai.py`)**:
+  - `_collect_all` が `account_locked` をタプルで返却するように改修し、`main()` での未定義変数参照（`NameError: name 'scraper' is not defined`）を解消。さらに `flow_log` のメッセージからも「利用停止」「ロック」を自動検出するフォールバックを実装。
+- **アカウントロック時のエラーメール大量送信の抑止 (`scrape_fureai.py`)**:
+  - 定期実行（体育館・テニスの計16回/日）が毎回ジョブ失敗（exit 1）することで GitHub から大量のエラー通知メールが届く問題を改善。
+  - アカウント利用停止中（要人間対応）が検出された場合は、既存の公開データを安全に保持したままステップサマリへの警告注釈（`::warning`）を出力し、正常終了（exit 0）として扱うことでエラーメールの乱発を即時防止。
+  - 川崎市ふれあいネット側でのロック解除後は、次回スケジュール実行時に自動で通常スクレイプへ復帰する。
+- **回帰テスト追加 (`test_scrape_fureai.py`)**:
+  - `main()` における `account_locked` 正常終了（exit 0）および `flow_log` フォールバック検知のユニットテスト2件を追加。
+- 検証: pytest 28件全通過（1件Playwrightスキップ）。
+

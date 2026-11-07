@@ -1093,16 +1093,16 @@ def _set_output(key: str, value: str) -> None:
             pass
 
 
-async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, list[dict]]:
+async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, list[dict], bool]:
     """1回ログインして全施設を順に取得する（同一資格情報のため共有）。
-    戻り値: (results, maintenance, flow_log)
+    戻り値: (results, maintenance, flow_log, account_locked)
       results = { facility_id: by_area }。ログイン不可なら results=None。
     """
     results: dict[str, dict] = {}
     _FACILITY_DURATIONS.clear()
     async with FureaiNetScraper(**_scraper_kwargs()) as scraper:
         if not await scraper.login():
-            return None, scraper.maintenance, list(scraper._flow_log)
+            return None, scraper.maintenance, list(scraper._flow_log), scraper.account_locked
         for cfg in cfgs:
             if not cfg.scrape_enabled:
                 continue
@@ -1110,7 +1110,7 @@ async def _collect_all(cfgs: list[FacilityConfig]) -> tuple[dict | None, bool, l
             t0 = time.monotonic()
             results[cfg.facility_id] = await _collect_records(cfg, scraper)
             _FACILITY_DURATIONS[cfg.facility_id] = round(time.monotonic() - t0, 1)
-        return results, False, list(scraper._flow_log)
+        return results, False, list(scraper._flow_log), False
 
 
 def _process_facility(
@@ -1446,12 +1446,23 @@ def main(argv: list[str] | None = None) -> int:
     previous_map = {cfg.facility_id: _fetch_previous(cfg) for cfg in targets}
 
     collected_res = _run_async(_collect_all(targets))
-    # 後方互換（テスト等で2タプルが返る場合にも対応）
-    if len(collected_res) == 3:
+    # 後方互換（テスト等でタプルの要素数が異なる場合にも安全に対応）
+    account_locked = False
+    if len(collected_res) == 4:
+        collected, maintenance, flow_log, account_locked = collected_res
+    elif len(collected_res) == 3:
         collected, maintenance, flow_log = collected_res
     else:
         collected, maintenance = collected_res
         flow_log = []
+
+    # 念のため flow_log からも利用停止・ロックキーワードを検出（多重防御）
+    if not account_locked and flow_log:
+        for item in flow_log:
+            msg = str(item.get("msg", ""))
+            if any(k in msg for k in ("利用停止", "ロック", "利用停止中")):
+                account_locked = True
+                break
 
     force = os.getenv("FORCE_DEPLOY", "").strip().lower() in ("1", "true", "yes")
     line_quota = get_line_quota_info()
@@ -1488,23 +1499,27 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[メンテ] {notice_msg}", flush=True)
             return 0
         _set_output("deploy", "false")
-        if scraper.account_locked:
-            lock_msg = "【要対応】ふれあいネットのアカウントが「利用停止中(ログイン失敗)」のためスクレイプを中断しました。ふれあいネット公式サイトからアカウントロック解除を行ってください。"
-            print(f"::error title=アカウント利用停止中::{lock_msg}", flush=True)
+        if account_locked:
+            lock_msg = "【要対応】ふれあいネットのアカウントが「利用停止中(ログイン失敗)」のためスクレイプを中断しました。ふれあいネット公式サイトからアカウントロック解除（暗証番号の確認・再設定）を行ってください。"
+            print(f"::warning title=アカウント利用停止中::{lock_msg}", flush=True)
             print(f"[利用停止] {lock_msg}", flush=True)
             _notify_admin("🚨 GYM Getter 異常: アカウント利用停止中 (ふれあいネット側でロック解除が必要です)")
             write_scrape_log_and_summary(
                 group=group,
                 started_at=started_at,
                 finished_at=finished_at,
-                status="error",
+                status="account_locked",
                 maintenance=False,
                 facility_diags=[],
                 flow_log=flow_log,
-                warnings=list(_ADMIN_WARNINGS),
+                warnings=list(_ADMIN_WARNINGS) + [lock_msg],
                 line_quota=line_quota,
             )
-            return 1
+            # アカウント利用停止中は外部サイト（川崎市ふれあいネット）側でのロック解除手続きが必要。
+            # 定期実行（1日16回）で毎回ジョブ失敗(exit 1)にしてしまうと大量のエラーメールが届き続けるため、
+            # 既存の公開データを維持したまま正常終了(exit 0)としてエラー通知の乱発を抑制する。
+            # ロック解除後は次回のスケジュール実行で自動的にスクレイプが再開される。
+            return 0
 
         # 真のログイン失敗（認証情報・サイト異常）→ 詳細な原因を抽出して管理者通知＋ジョブ失敗
         detail_msg = ""
